@@ -1,0 +1,5 @@
+/data/UROP/lib/llvm-passes/build/CMakeFiles/rebuild_cache.dir
+/data/UROP/lib/llvm-passes/build/CMakeFiles/edit_cache.dir
+/data/UROP/lib/llvm-passes/build/functionrename/CMakeFiles/edit_cache.dir
+/data/UROP/lib/llvm-passes/build/functionrename/CMakeFiles/rebuild_cache.dir
+/data/UROP/lib/llvm-passes/build/functionrename/CMakeFiles/FunctionRenamePass.dir
