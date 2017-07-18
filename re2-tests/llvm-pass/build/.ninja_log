@@ -1,9 +1,0 @@
-# ninja log v5
-1	2834	0	functionrename/CMakeFiles/SkeletonPass.dir/Skeleton.cpp.o	4f57aa4386678133
-1	3311	0	functionrename/CMakeFiles/SkeletonPass.dir/FunctionRename.cpp.o	662a08d78242120c
-3312	3544	0	functionrename/libSkeletonPass.so	721e0877d51ff8ad
-23	2034	0	functionrename/CMakeFiles/SkeletonPass.dir/FunctionRename.cpp.o	662a08d78242120c
-2034	2086	0	functionrename/libSkeletonPass.so	721e0877d51ff8ad
-1	2360	0	functionrename/CMakeFiles/SkeletonPass.dir/Skeleton.cpp.o	4f57aa4386678133
-1	2761	0	functionrename/CMakeFiles/SkeletonPass.dir/FunctionRename.cpp.o	662a08d78242120c
-2761	2811	0	functionrename/libSkeletonPass.so	721e0877d51ff8ad

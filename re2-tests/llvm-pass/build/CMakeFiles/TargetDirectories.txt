@@ -1,5 +1,0 @@
-/homes/ma7614/UROP/symbolic-execution2/build/CMakeFiles/rebuild_cache.dir
-/homes/ma7614/UROP/symbolic-execution2/build/CMakeFiles/edit_cache.dir
-/homes/ma7614/UROP/symbolic-execution2/build/functionrename/CMakeFiles/rebuild_cache.dir
-/homes/ma7614/UROP/symbolic-execution2/build/functionrename/CMakeFiles/edit_cache.dir
-/homes/ma7614/UROP/symbolic-execution2/build/functionrename/CMakeFiles/SkeletonPass.dir
