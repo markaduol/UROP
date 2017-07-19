@@ -23,6 +23,7 @@ AR?=ar
 ARFLAGS?=rsc
 NM?=nm
 NMFLAGS?=-p
+LLVM_LINK?=llvm-link
 
 # Variables mandated by GNU, the arbiter of all good taste on the internet.
 # http://www.gnu.org/prep/standards/standards.html
@@ -68,7 +69,7 @@ SOEXTVER00=$(SOEXT).$(SONAME).0.0
 MAKE_SHARED_LIBRARY=$(CXX) -shared -Wl,-soname,libre2.$(SOEXTVER),--version-script,libre2.symbols $(RE2_LDFLAGS) $(LDFLAGS)
 endif
 
-all: obj/libre2.a obj/so/libre2.$(SOEXT)
+all: obj/bitcode/libre2.bc obj/libre2.a obj/so/libre2.$(SOEXT)
 
 INSTALL_HFILES=\
 	re2/filtered_re2.h\
@@ -130,6 +131,30 @@ OFILES=\
 	obj/re2/unicode_casefold.o\
 	obj/re2/unicode_groups.o\
 
+BCFILES=\
+	obj/bitcode/util/rune.bc\
+	obj/bitcode/util/strutil.bc\
+	obj/bitcode/re2/bitstate.bc\
+	obj/bitcode/re2/compile.bc\
+	obj/bitcode/re2/dfa.bc\
+	obj/bitcode/re2/filtered_re2.bc\
+	obj/bitcode/re2/mimics_pcre.bc\
+	obj/bitcode/re2/nfa.bc\
+	obj/bitcode/re2/onepass.bc\
+	obj/bitcode/re2/parse.bc\
+	obj/bitcode/re2/perl_groups.bc\
+	obj/bitcode/re2/prefilter.bc\
+	obj/bitcode/re2/prefilter_tree.bc\
+	obj/bitcode/re2/prog.bc\
+	obj/bitcode/re2/re2.bc\
+	obj/bitcode/re2/regexp.bc\
+	obj/bitcode/re2/set.bc\
+	obj/bitcode/re2/simplify.bc\
+	obj/bitcode/re2/stringpiece.bc\
+	obj/bitcode/re2/tostring.bc\
+	obj/bitcode/re2/unicode_casefold.bc\
+	obj/bitcode/re2/unicode_groups.bc\
+
 TESTOFILES=\
 	obj/util/pcre.o\
 	obj/re2/testing/backtrack.o\
@@ -178,6 +203,10 @@ obj/%.o: %.cc $(HFILES)
 	@mkdir -p $$(dirname $@)
 	$(CXX) -c -o $@ $(CPPFLAGS) $(RE2_CXXFLAGS) $(CXXFLAGS) -DNDEBUG $*.cc
 
+obj/bitcode/%.bc: %.cc $(HFILES)
+	@mkdir -p $$(dirname $@)
+	$(CXX) -c -o $@ -emit-llvm $(CPPFLAGS) $(RE2_CXXFLAGS) $(CXXFLAGS) -DNDEBUG $*.cc
+
 obj/dbg/%.o: %.cc $(HFILES)
 	@mkdir -p $$(dirname $@)
 	$(CXX) -c -o $@ $(CPPFLAGS) $(RE2_CXXFLAGS) $(CXXFLAGS) $*.cc
@@ -189,6 +218,10 @@ obj/so/%.o: %.cc $(HFILES)
 obj/libre2.a: $(OFILES)
 	@mkdir -p obj
 	$(AR) $(ARFLAGS) obj/libre2.a $(OFILES)
+
+obj/bitcode/libre2.bc: $(BCFILES)
+	@mkdir -p obj/bitcode
+	$(LLVM_LINK) -o obj/bitcode/libre2.bc $(LLVM_LINKFLAGS) $(BCFILES)
 
 obj/dbg/libre2.a: $(DOFILES)
 	@mkdir -p obj/dbg

@@ -1,5 +1,4 @@
 *.pyc
 *.orig
 core
-obj/
 benchlog.*
