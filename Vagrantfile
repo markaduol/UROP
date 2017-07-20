@@ -21,12 +21,13 @@ make
 sudo make install
 cd ..
 ulimit -s unlimited
+cd ..
 SCRIPT
 
 $klee_script = <<SCRIPT
 git clone https://github.com/klee/klee.git
-mkdir klee_build_dir
-cd klee_build_dir
+mkdir build
+cd build
 cmake -DENABLE_SOLVER_STP=ON ../klee
 make
 SCRIPT
