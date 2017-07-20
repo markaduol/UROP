@@ -2,11 +2,13 @@
 # vi: set ft=ruby :
 
 $stp_script = <<SCRIPT
+apt-get install -y zlib1g-dev flex bison
 git clone https://github.com/stp/minisat.git
 cd minisat
 mkdir build
 cd build
 cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local ../
+make
 sudo make install
 cd ../../
 git clone https://github.com/stp/stp.git
@@ -25,7 +27,7 @@ $klee_script = <<SCRIPT
 git clone https://github.com/klee/klee.git
 mkdir klee_build_dir
 cd klee_build_dir
-cmake -G "Unix Makefiles" -DENABLE_SOLVER_STP=ON ../klee
+cmake -DENABLE_SOLVER_STP=ON ../klee
 make
 SCRIPT
 
