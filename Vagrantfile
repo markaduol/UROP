@@ -28,7 +28,7 @@ $klee_script = <<SCRIPT
 git clone https://github.com/klee/klee.git
 mkdir build
 cd build
-cmake -DENABLE_SOLVER_STP=ON ../klee
+cmake -DENABLE_SOLVER_STP=ON -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.9 -DENABLE_UNIT_TESTS=OFF -DENABLE_SYSTEM_TESTS=OFF ../
 make
 SCRIPT
 
