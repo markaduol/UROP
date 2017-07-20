@@ -48,9 +48,6 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: "sudo apt-get install -y clang-3.9 clang-3.9-doc libclang-common-3.9-dev libclang-3.9-dev libclang1-3.9 libclang1-3.9-dbg libllvm-3.9-ocaml-dev libllvm3.9 libllvm3.9-dbg lldb-3.9 llvm-3.9 llvm-3.9-dev llvm-3.9-doc llvm-3.9-examples llvm-3.9-runtime clang-format-3.9 python-clang-3.9 libfuzzer-3.9-dev"
   # Install klee dependencies
   config.vm.provision "shell", inline: "sudo apt-get install -y build-essential curl libcap-dev git cmake libncurses5-dev python-minimal python-pip unzip"
-  config.vm.provision "shell", inline: "wget https://cmake.org/files/v3.9/cmake-3.9.0-Linux-x86_64.sh"
-  config.vm.provision "shell", inline: "sudo chmod +x cmake-3.9.0-Linux-x86_64.sh"
-  config.vm.provision "shell", inline: "./cmake-3.9.0-Linux-x86_64.sh"
   # Install STP
   config.vm.provision "shell", inline: $stp_script
   # Install klee
