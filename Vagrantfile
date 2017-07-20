@@ -56,6 +56,7 @@ Vagrant.configure("2") do |config|
   # Install klee
   config.vm.provision "shell", inline: $klee_script 
   # Setup project
+  config.vm.provision "shell", inline: "git clone https://github.com/markaduol/UROP.git" #Todo: point to specific revision
   config.vm.provision "shell", inline: "cd /data/UROP/lib/re2"
   config.vm.provision "shell", inline: "CXX=clang++ make"
   config.vm.provision "shell", inline: "cd /data/UROP/lib/re2-2017-06-01"
