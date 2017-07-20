@@ -12,7 +12,7 @@
 # CCPCRE=-I/usr/local/include -DUSEPCRE
 # LDPCRE=-L/usr/local/lib -lpcre
 
-CXX?=g++
+CXX?=clang++
 # can override
 CXXFLAGS?=-O3 -g
 LDFLAGS?=
