@@ -4,3 +4,6 @@
 3372	3451	0	functionrename/libFunctionRenamePass.so	15785ee9289f7b04
 1	1884	0	functionrename/CMakeFiles/FunctionRenamePass.dir/FunctionRename.cpp.o	d2061e2ca4f7163a
 1884	1927	0	functionrename/libFunctionRenamePass.so	15785ee9289f7b04
+137	3446	0	functionrename/CMakeFiles/FunctionRenamePass.dir/Skeleton.cpp.o	36f3bd69bac9dcf1
+137	3860	0	functionrename/CMakeFiles/FunctionRenamePass.dir/FunctionRename.cpp.o	d2061e2ca4f7163a
+3860	3944	0	functionrename/libFunctionRenamePass.so	15785ee9289f7b04
