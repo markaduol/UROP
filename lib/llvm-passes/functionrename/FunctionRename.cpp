@@ -9,7 +9,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
+// TargetLibraryInfo not in llvm 3.4
+// #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
@@ -25,17 +26,17 @@ namespace {
     static char ID; // Pass identification
     FunctionRename() : ModulePass(ID) {}
 
-    void getAnalysisUsage(AnalysisUsage &AU) const override {
+    /* void getAnalysisUsage(AnalysisUsage &AU) const override {
       // A TargetLibraryInfoWrapperPass is required by this FunctionRename
       // pass
       AU.addRequired<TargetLibraryInfoWrapperPass>();
       AU.setPreservesAll();
-    }
+    } */
 
     bool runOnModule(Module &M) override {
       // Rename all functions
-      const TargetLibraryInfo &TLI =
-        getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
+      //const TargetLibraryInfo &TLI =
+        //getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
       for (auto &F : M) {
         StringRef Name = F.getName();
         // Leave library functions alone because their presence or absence

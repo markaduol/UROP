@@ -1,8 +1,9 @@
+LLVM_VERSION?=3.4
 CXX?=clang++
 CXXFLAGS?=-g -I /home/klee/klee_src/include
-LLVM_LINK?=llvm-link
+LLVM_LINK?=llvm-link-${LLVM_VERSION}
 LLVM_LINKFLAGS?=
-LLVM_OPT?=opt
+LLVM_OPT?=opt-${LLVM_VERSION}
 # required
 RE2_CXXFLAGS?=-std=c++11 -Wall -Wextra -I lib/re2
 

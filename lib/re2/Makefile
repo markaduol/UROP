@@ -12,6 +12,7 @@
 # CCPCRE=-I/usr/local/include -DUSEPCRE
 # LDPCRE=-L/usr/local/lib -lpcre
 
+LLVM_VERSION?=3.4
 CXX?=clang++
 # can override
 CXXFLAGS?=-O3 -g
@@ -23,8 +24,8 @@ AR?=ar
 ARFLAGS?=rsc
 NM?=nm
 NMFLAGS?=-p
-LLVM_LINK?=llvm-link
-LLVM_LINKFLAGS?=-only-needed
+LLVM_LINK?=llvm-link-$(LLVM_VERSION)
+LLVM_LINKFLAGS?=
 
 # Variables mandated by GNU, the arbiter of all good taste on the internet.
 # http://www.gnu.org/prep/standards/standards.html
