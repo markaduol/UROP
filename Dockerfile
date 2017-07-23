@@ -2,7 +2,8 @@
 
 FROM ubuntu:14.04
 
-ENV LLVM_VERSION=3.4
+ENV LLVM_VERSION=3.4 \
+    UROP_SRC=/home/mark/UROP
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
 
@@ -17,6 +18,7 @@ RUN set -xe && \
 
 # Install klee dependencies
 RUN set -xe && \
+  apt-get update && \
   apt-get install -y \
     build-essential \
     curl \
@@ -64,3 +66,9 @@ RUN set -xe && \
     -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-${LLVM_VERSION} \
     -DENABLE_UNIT_TESTS=OFF \ 
     -DENABLE_SYSTEM_TESTS=OFF ../
+
+# Add relevant files
+RUN set -xe && \
+  mkdir -p ${UROP_SRC}
+
+COPY / ${UROP_SRC}
