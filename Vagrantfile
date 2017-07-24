@@ -2,11 +2,9 @@
 # vi: set ft=ruby :
 
 $stp_script = <<SCRIPT
-apt-get install -y zlib1g-dev flex bison
 git clone https://github.com/stp/minisat.git
-cd minisat
-mkdir build
-cd build
+mkdir -p minisat/build
+cd minisat/build
 cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local ../
 make
 sudo make install
@@ -16,20 +14,22 @@ cd stp
 git checkout tags/2.1.2
 mkdir build
 cd build
-cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DENABLE_PYTHON_INTERFACE:BOOL=OFF ..
+cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DENABLE_PYTHON_INTERFACE:BOOL=OFF ../
 make
 sudo make install
-cd ..
+cd ../
 ulimit -s unlimited
-cd ..
+cd ../
 SCRIPT
 
 $klee_script = <<SCRIPT
 git clone https://github.com/klee/klee.git
+cd klee
 mkdir build
 cd build
-cmake -DENABLE_SOLVER_STP=ON -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.9 -DENABLE_UNIT_TESTS=OFF -DENABLE_SYSTEM_TESTS=OFF ../
+cmake -DENABLE_SOLVER_STP=ON -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 -DENABLE_UNIT_TESTS=OFF -DENABLE_SYSTEM_TESTS=OFF ../
 make
+cd ../../
 SCRIPT
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
@@ -45,24 +45,14 @@ Vagrant.configure("2") do |config|
   # boxes at https://vagrantcloud.com/search.
   config.vm.box = "ubuntu/trusty64"
   # Install LLVM and Clang
-  config.vm.provision "shell", inline: "wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -"
-  config.vm.provision "shell", inline: "sudo apt-add-repository \"deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-3.9 main\""
-  config.vm.provision "shell", inline: "sudo apt-get update"
-  config.vm.provision "shell", inline: "sudo apt-get install -y clang-3.9 clang-3.9-doc libclang-common-3.9-dev libclang-3.9-dev libclang1-3.9 libclang1-3.9-dbg libllvm-3.9-ocaml-dev libllvm3.9 libllvm3.9-dbg lldb-3.9 llvm-3.9 llvm-3.9-dev llvm-3.9-doc llvm-3.9-examples llvm-3.9-runtime clang-format-3.9 python-clang-3.9 libfuzzer-3.9-dev"
+  config.vm.provision "shell", inline: "apt-get update"
+  config.vm.provision "shell", inline: "apt-get install -y clang-3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-runtime "
   # Install klee dependencies
-  config.vm.provision "shell", inline: "sudo apt-get install -y build-essential curl libcap-dev git cmake libncurses5-dev python-minimal python-pip unzip"
+  config.vm.provision "shell", inline: "apt-get install -y build-essential curl libcap-dev git cmake libncurses5-dev python-minimal python-pip unzip zlib1g-dev flex bison"
   # Install STP
   config.vm.provision "shell", inline: $stp_script
   # Install klee
   config.vm.provision "shell", inline: $klee_script 
-  # Setup project
-  config.vm.provision "shell", inline: "git clone https://github.com/markaduol/UROP.git" #Todo: point to specific revision
-  config.vm.provision "shell", inline: "cd /data/UROP/lib/re2"
-  config.vm.provision "shell", inline: "CXX=clang++-3.9 make"
-  config.vm.provision "shell", inline: "cd /data/UROP/lib/re2-2017-06-01"
-  config.vm.provision "shell", inline: "CXX=clang++-3.9 make"
-  config.vm.provision "shell", inline: "cd /data/UROP"
-  config.vm.provision "shell", inline: "make"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -93,7 +83,7 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder "../data/UROP", "/vagrant_data/UROP"
+  config.vm.synced_folder ".", "/vagrant"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
