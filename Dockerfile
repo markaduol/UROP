@@ -72,3 +72,7 @@ RUN set -xe && \
   mkdir -p ${UROP_SRC}
 
 COPY / ${UROP_SRC}
+
+# Create symbolic link for llvm-config
+RUN set -xe && \
+  ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config
