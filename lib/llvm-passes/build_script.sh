@@ -5,6 +5,6 @@ if [ ! -d "build" ]; then
 fi
 
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 ..
 cmake --build .
 cd ..
