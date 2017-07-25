@@ -86,6 +86,7 @@ COPY / ${HOME_DIR}/UROP
 
 # Add KLEE binary directory to path
 RUN set -xe && \
+  touch ${HOME_DIR}/.bashrc && \
   (echo 'export PATH=$PATH:'${KLEE_BUILD_DIR}'/bin' >> ${HOME_DIR}/.bashrc)
 
 # Create symbolic links
