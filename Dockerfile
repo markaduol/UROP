@@ -92,4 +92,4 @@ RUN set -xe && \
 USER root
 RUN set -xe && \
   ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config && \
-  (for executable in ${KLEE_BUILD_DIR}/bin/* ; do ln -s ${executable} /usr/bin`basename ${executable}`; done)
+  (for executable in ${KLEE_BUILD_DIR}/bin/* ; do ln -s ${executable} /usr/bin/`basename ${executable}`; done)
