@@ -3,7 +3,8 @@
 FROM ubuntu:14.04
 
 ENV LLVM_VERSION=3.4 \
-    UROP_SRC=/home/mark/UROP
+    KLEE_BUILD_DIR=/home/klee/build \
+    HOME_DIR=/home/mark
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
 
@@ -70,10 +71,16 @@ RUN set -xe && \
 
 # Add relevant files
 RUN set -xe && \
-  mkdir -p ${UROP_SRC}
+  mkdir -p ${HOME_DIR}/UROP
 
-COPY / ${UROP_SRC}
+COPY / ${HOME_DIR}/UROP
 
-# Create symbolic link for llvm-config
+# Add KLEE binary directory to path
 RUN set -xe && \
-  ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config
+  (echo 'export PATH=$PATH:'${KLEE_BUILD_DIR}'/bin' >> ${HOME_DIR}/.bashrc)
+
+# Create symbolic links
+USER root
+RUN set -xe && \
+  ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config && \
+  (for executable in ${KLEE_BUILD_DIR}/bin/* ; do ln -s ${executable} /usr/bin`basename ${executable}`; done)
