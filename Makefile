@@ -1,6 +1,6 @@
 LLVM_VERSION?=3.4
 CXX?=clang++
-CXXFLAGS?=-g -I /home/klee/klee_src/include
+CXXFLAGS?=-g -I /klee/include
 LLVM_LINK?=llvm-link-${LLVM_VERSION}
 LLVM_LINKFLAGS?=
 LLVM_OPT?=opt-${LLVM_VERSION}

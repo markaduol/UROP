@@ -39,6 +39,10 @@ llvm/Transforms/IPO.h
 /home/mark/UROP/lib/llvm-passes/functionrename/llvm/Transforms/IPO.h
 llvm/IR/Argument.h
 /home/mark/UROP/lib/llvm-passes/functionrename/llvm/IR/Argument.h
+llvm/IR/GlobalValue.h
+/home/mark/UROP/lib/llvm-passes/functionrename/llvm/IR/GlobalValue.h
+llvm/IR/Metadata.h
+/home/mark/UROP/lib/llvm-passes/functionrename/llvm/IR/Metadata.h
 
 /home/mark/UROP/lib/llvm-passes/functionrename/Skeleton.cpp
 llvm/Pass.h
