@@ -4,6 +4,7 @@ FROM ubuntu:14.04
 
 ENV LLVM_VERSION=3.4 \
     KLEE_BUILD_DIR=/home/klee/build \
+    KLEE_UCLIBC_SOURCE_DIR=/klee-uclibc \
     HOME_DIR=/home/mark
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
@@ -57,8 +58,13 @@ RUN set -xe && \
   ulimit -s unlimited && \
   cd ../ 
 
-# Install klee
+# Install klee and klee-uclibc
 RUN set -xe && \
+  git clone https://github.com/klee/klee-uclibc.git && \
+  cd klee-uclibc && \
+  ./configure --make-llvm-lib && \
+  make -j2 && \
+  cd .. && \
   git clone https://github.com/klee/klee.git && \
   cd klee && \
   mkdir build && \
@@ -66,6 +72,9 @@ RUN set -xe && \
   cmake -DENABLE_SOLVER_STP=ON \
     -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-${LLVM_VERSION} \
     -DENABLE_UNIT_TESTS=OFF \ 
+    -DENABLE_POSIX_RUNTIME=ON \
+    -DENABLE_KLEE_UCLIBC=ON \
+    -DKLEE_UCLIBC_PATH=${KLEE_UCLIBC_SOURCE_DIR}
     -DENABLE_SYSTEM_TESTS=OFF ../ && \
   make
 
