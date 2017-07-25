@@ -65,7 +65,7 @@ RUN set -xe && \
   cmake -DENABLE_SOLVER_STP=ON \
     -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-${LLVM_VERSION} \
     -DENABLE_UNIT_TESTS=OFF \ 
-    -DENABLE_SYSTEM_TESTS=OFF ../
+    -DENABLE_SYSTEM_TESTS=OFF ../ && \
   make
 
 # Add relevant files
