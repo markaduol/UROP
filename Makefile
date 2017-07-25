@@ -38,6 +38,6 @@ $(BCFILE_2_RENAMED): $(BCFILE_2)
 	@mkdir -p obj/bitcode
 	$(LLVM_OPT) -load $(FUNCRENAME_PASS) -functionrename < $(BCFILE_2) > $(BCFILE_2_RENAMED)
 
-obj/bitcode/libre2_l.bc: $(BCFILE_1) $(BCFILE_2_RENAMED) $(SRC_FILE)
+obj/bitcode/libre2_l.bc: $(BCFILE_1) $(BCFILE_2_RENAMED) $(SRC_BCFILE)
 	@mkdir -p obj/bitcode
-	$(LLVM_LINK) -o obj/bitcode/libre2_l.bc $(LLVM_LINKFLAGS) $(BCFILE_1) $(BCFILE_2_RENAMED) $(SRC_FILE)
+	$(LLVM_LINK) -o obj/bitcode/libre2_l.bc $(LLVM_LINKFLAGS) $(BCFILE_1) $(BCFILE_2_RENAMED) $(SRC_BCFILE)
