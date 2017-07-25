@@ -1,0 +1,10 @@
+# Exclude object files
+/obj
+/lib/*/obj
+# Exclude 'Dockerfile' and '.dockerignore' files
+Dockerfile
+.dockerignore
+# Exclude git files
+.git*
+# Include README files
+!README*.md
