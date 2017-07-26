@@ -60,7 +60,7 @@ RUN set -xe && \
 
 # Create symbolic links
 RUN set -xe && \
-  ln -s /usr/bin/llvm-config-${LLVM_VESRION} /usr/bin/llvm-config
+  ln -s /usr/bin/llvm-config-${LLVM_VERSION} /usr/bin/llvm-config
 
 # Install klee and klee-uclibc
 RUN set -xe && \
