@@ -27,37 +27,21 @@ namespace {
     FunctionRename() : ModulePass(ID) {}
 
     bool runOnModule(Module &M) override {
+
       for (auto it = M.global_begin(); it != M.global_end(); ++it)
       {
         GlobalVariable& gv = *it;
         if (!gv.isDeclaration())
-        {
-          errs() << "Global Variable (defined in TU): " << gv.getName().str() << "\n";
           gv.setLinkage(GlobalValue::LinkerPrivateLinkage);
-          errs() << "Linkage type: " << gv.getLinkage() << "\n";
-        } 
-        else 
-        {
-          errs() << "Global Variable (not defined in TU): " << gv.getName().str() << "\n";
-        }
-        /*if (gv.hasWeakLinkage())
-        {
-          errs() << "(Has Weak Linkage)" << "\n";
-          gv.setLinkage(GlobalValue::WeakAnyLinkage);
-        } */
       }
+      
       for (auto it = M.alias_begin(); it != M.alias_end(); ++it)
       {
         GlobalAlias& ga = *it;
-        errs() << "Alias: " << ga.getName().str() << "\n";
         if (!ga.isDeclaration())
           ga.setLinkage(GlobalValue::LinkerPrivateLinkage);
       }
-      for (auto it = M.named_metadata_begin(); it != M.named_metadata_end(); ++it)
-      {
-        NamedMDNode& mdNode = *it;
-        errs() << "Metadata Node name: " << mdNode.getName().str() << "\n";
-      }
+
       // Rename all functions
       for (auto &F : M) {
         StringRef Name = F.getName();
