@@ -3,7 +3,7 @@
 FROM ubuntu:14.04
 
 ENV LLVM_VERSION=3.4 \
-    KLEE_BUILD_DIR=/home/klee/build \
+    KLEE_BUILD_DIR=/klee/build \
     KLEE_UCLIBC_SOURCE_DIR=/klee-uclibc \
     HOME_DIR=/home/mark
 
