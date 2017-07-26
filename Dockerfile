@@ -58,6 +58,10 @@ RUN set -xe && \
   ulimit -s unlimited && \
   cd ../ 
 
+# Create symbolic links
+RUN set -xe && \
+  ln -s /usr/bin/llvm-config-${LLVM_VESRION} /usr/bin/llvm-config
+
 # Install klee and klee-uclibc
 RUN set -xe && \
   git clone https://github.com/klee/klee-uclibc.git && \
@@ -92,5 +96,4 @@ RUN set -xe && \
 # Create symbolic links
 USER root
 RUN set -xe && \
-  ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config && \
   (for executable in ${KLEE_BUILD_DIR}/bin/* ; do ln -s ${executable} /usr/bin/`basename ${executable}`; done)
