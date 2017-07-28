@@ -32,14 +32,14 @@ namespace {
       {
         GlobalVariable& gv = *it;
         if (!gv.isDeclaration())
-          gv.setLinkage(GlobalValue::LinkerPrivateLinkage);
+          gv.setLinkage(GlobalValue::PrivateLinkage);
       }
       
       for (auto it = M.alias_begin(); it != M.alias_end(); ++it)
       {
         GlobalAlias& ga = *it;
         if (!ga.isDeclaration())
-          ga.setLinkage(GlobalValue::LinkerPrivateLinkage);
+          ga.setLinkage(GlobalValue::PrivateLinkage);
       }
 
       // Rename all functions
@@ -49,10 +49,21 @@ namespace {
         // could affect the behaviour of other passes.
         if (F.isDeclaration())
           continue;
-        F.setLinkage(GlobalValue::WeakAnyLinkage);
         F.setName(Name + "_renamed");
       }
       return true;
+    }
+
+    std::string rename(std::string &Name)
+    {
+      std::string search_str = std::string("(");
+      std::string suffix_str = std::string("_renamed");
+      size_t i = Name.find_first_of(search_str);
+      if (i == std::string::npos)
+        Name.append(suffix_str);
+      else
+        Name.insert(i, suffix_str);
+      return Name;
     }
   };
 }

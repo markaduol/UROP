@@ -174,7 +174,7 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 FunctionRenamePass_LIB_DEPENDS:STATIC=
 
 //Path to a program.
-LLVM_CONFIG_BINARY:FILEPATH=/usr/bin/llvm-config
+LLVM_CONFIG_BINARY:FILEPATH=/usr/bin/llvm-config-3.4
 
 //Value Computed by CMake
 Project_BINARY_DIR:STATIC=/home/mark/UROP/lib/llvm-passes/build
