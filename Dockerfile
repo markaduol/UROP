@@ -97,3 +97,7 @@ RUN set -xe && \
 USER root
 RUN set -xe && \
   (for executable in ${KLEE_BUILD_DIR}/bin/* ; do ln -s ${executable} /usr/bin/`basename ${executable}`; done)
+
+# Install wllvm
+RUN set -xe && \
+  pip install wllvm
