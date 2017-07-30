@@ -12,3 +12,6 @@ lib/musl/lib
 
 # Ignore llvm pass build output
 lib/llvm-passes/build
+
+# Ignore temporary vim files
+**/.sw*
