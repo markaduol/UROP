@@ -1,3 +1,4 @@
-obj/
-re2/obj
-re2/2017-06-01/obj
+**/*.bc
+**/*.o
+**/obj
+lib/musl/lib
