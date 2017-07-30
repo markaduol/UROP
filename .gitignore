@@ -2,3 +2,13 @@
 **/*.o
 **/obj
 lib/musl/lib
+ 
+# Ignore klee output
+**/klee-last
+**/klee-out*
+
+# Ignore Vagrant artifacts
+**/.vagrant
+
+# Ignore llvm pass build output
+lib/llvm-passes/build
