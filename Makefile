@@ -7,7 +7,7 @@ LLVM_OPT?=opt-${LLVM_VERSION}
 # required
 RE2_CXXFLAGS?=-std=c++11 -Wall -Wextra -I lib/re2
 
-FUNCRENAME_PASS?=lib/llvm-passes/build/functionrename/libFunctionRenamePass.so
+FUNCRENAME_PASS?=llvm-passes/build/functionrename/libFunctionRenamePass.so
 
 # Variables mandated by GNU.
 prefix=/usr/local
