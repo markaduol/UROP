@@ -2,6 +2,7 @@
 **/*.o
 **/obj
 lib/musl/lib
+lib/musl/config.mak
  
 # Ignore klee output
 **/klee-last
