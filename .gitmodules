@@ -1,3 +1,6 @@
-[submodule "lib/upb"]
-  path = lib/upb
+[submodule "third_party/upb"]
+  path = third_party/upb
   url  = https://github.com/google/upb.git
+[submodule "third_party/Baselibc"]
+  path = third_party/Baselibc
+  url  = https://github.com/PetteriAimonen/Baselibc.git
