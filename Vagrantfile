@@ -23,11 +23,16 @@ cd ../
 SCRIPT
 
 $klee_script = <<SCRIPT
+git clone https://github.com/klee/klee-uclibc.git
+cd klee-uclibc
+./configure --make-llvm-lib
+make -j2
+cd ..
 git clone https://github.com/klee/klee.git
 cd klee
 mkdir build
 cd build
-cmake -DENABLE_SOLVER_STP=ON -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 -DENABLE_UNIT_TESTS=OFF -DENABLE_SYSTEM_TESTS=OFF ../
+cmake -DENABLE_SOLVER_STP=ON -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 -DENABLE_UNIT_TESTS=OFF -DENABLE_POSIX_RUNTIME=ON -DENABLE_KLEE_UCLIBC=ON -DKLEE_UCLIBC_PATH=/klee-uclibc -DENABLE_SYSTEM_TESTS=OFF ../
 make
 cd ../../
 SCRIPT
@@ -52,7 +57,15 @@ Vagrant.configure("2") do |config|
   # Install STP
   config.vm.provision "shell", inline: $stp_script
   # Install klee
+  config.vm.provision "shell", inline: "ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config"
   config.vm.provision "shell", inline: $klee_script 
+
+  config.vm.synced_folder "../UROP", "/home/vagrant/"
+
+  config.vm.provision "shell", inline: "touch /home/vagrant/.bashrc"
+  config.vm.provision "shell", inline: "echo 'export PATH=$PATH:/klee/build/bin' >> /home/vagrant/.bashrc"
+  config.vm.provision "shell", inline: "for executable in /klee/build/bin/* ; do ln -s ${executable} /usr/bin/`basename ${executable}`; done"
+  config.vm.provision "shell", inline: "pip install wllvm"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -83,7 +96,7 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder ".", "/vagrant"
+  # config.vm.synced_folder "../UROP", "/home/vagrant/"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
