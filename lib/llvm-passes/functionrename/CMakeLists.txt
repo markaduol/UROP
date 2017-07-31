@@ -2,6 +2,7 @@ add_library(FunctionRenamePass MODULE
     # List your source files here.
     Skeleton.cpp
     FunctionRename.cpp
+    WeakFunctionDefs.cpp
 )
 
 # Use C++11 to compile your pass (i.e., supply -std=c++11).
