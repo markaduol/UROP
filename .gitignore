@@ -1,5 +1,7 @@
 **/*.bc
+*.bc
 **/*.o
+*.o
 **/obj
 lib/musl/lib
 lib/musl/config.mak
