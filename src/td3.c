@@ -46,7 +46,6 @@ static void mk_symbolic_m(upb_msglayout_msginit_v1 *m, int id)
   sprintf(name_prefix, "m%d", id);
 
   klee_make_symbolic(m, sizeof(*m), name_prefix);
-  
 }
 
 static void mk_assume_fields(upb_msglayout_fieldinit_v1 *fields1, upb_msglayout_fieldinit_v1 *fields2)
@@ -164,7 +163,7 @@ int main(int argc, char *argv[])
   mk_assume_m(m1, m2);
 
   /*TODO assume fields in structs equal */
-  klee_assert(upb_encode_message(e1, msg1, m1, &size) == upb_encode_message_renamed(e2, msg2, m2));
+  klee_assert(upb_encode_message(e1, msg1, m1) == upb_encode_message_renamed(e2, msg2, m2, &size));
 
   return 0;
 }

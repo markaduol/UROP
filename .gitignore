@@ -21,3 +21,6 @@ llvm-passes/build
 
 # Ignore .temps files
 **/*.temps
+
+# Ignore 'upb' repository copies
+third_party/upb-*
