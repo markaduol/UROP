@@ -42,6 +42,7 @@ cp -R third_party/upb third_party/upb-2
 ```
 
 In `upb` (https://github.com/google/upb)
+
   ```
   export LLVM_COMPILER=clang
   CC=wllvm CFLAGS+=-g make
@@ -55,7 +56,15 @@ In `upb` (https://github.com/google/upb)
   cp third_party/upb-2/lib/libupb.a.bc libupb2.a.bc
   ```
 
-In the Docker and Vagrant environment, the names of the LLVM toolchain binaries are suffixed with the version number `3.4`. So instead of `opt` and `llvm-link`, write `opt-3.4`, `llvm-link-3.4`.
+In the Docker or Vagrant environments, you may need to use the `--linker` flag of `extract-bc` as follows:
+
+  ```
+  extract-bc -b --linker /usr/bin/llvm-link-3.4 [archive]
+  ```
+  
+If you would rather not use the `--linker` flag, create a symbolic link `ln -s /usr/bin/llvm-link-3.4 /usr/bin/llvm-link`.
+
+In the Docker and Vagrant environments, the names of the LLVM toolchain binaries are suffixed with the version number `3.4`. So instead of `opt` and `llvm-link`, write `opt-3.4`, `llvm-link-3.4`.
 
   ```
   export PASS=llvm-passes/build/functionrename/libFunctionRenamePass.so
