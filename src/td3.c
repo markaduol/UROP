@@ -29,15 +29,6 @@ static void mk_symbolic_fields(upb_msglayout_fieldinit_v1 *fields, int id)
 
   klee_make_symbolic(fields, sizeof(*fields), name_prefix);
   printf("Size of fields: %lu\nSize of *fields: %lu\n ", sizeof(fields), sizeof(*fields));
-
- /* klee_make_symbolic(&fields->number, sizeof(fields->number), strcat(name_prefix, "->number"));
-  klee_make_symbolic(&fields->offset, sizeof(uint32_t), strcat(name_prefix, "->offset"));
-  klee_make_symbolic(&fields->hasbit, sizeof(uint16_t), strcat(name_prefix, "->hasbit"));
-  klee_make_symbolic(&fields->oneof_index, sizeof(uint16_t), strcat(name_prefix, "->oneof_index"));
-  klee_make_symbolic(&fields->submsg_index, sizeof(uint16_t), strcat(name_prefix, "->submsg_index"));
-  klee_make_symbolic(&fields->type, sizeof(uint8_t), strcat(name_prefix, "->type"));
-  klee_make_symbolic(&fields->label, sizeof(uint8_t), strcat(name_prefix, "->label"));
-  */
 }
 
 static void mk_symbolic_oneofs(upb_msglayout_oneofinit_v1 *oneofs, int id)
@@ -46,10 +37,6 @@ static void mk_symbolic_oneofs(upb_msglayout_oneofinit_v1 *oneofs, int id)
   sprintf(name_prefix, "oneofs%d", id);
 
   klee_make_symbolic(oneofs, sizeof(*oneofs), name_prefix);
-  /*
-  klee_make_symbolic(&oneofs->data_offset, sizeof(uint32_t), strcat(name_prefix, "->data_offset"));
-  klee_make_symbolic(&oneofs->case_offset, sizeof(uint32_t), strcat(name_prefix, "->case_offset"));
-  */
 }
 
 
@@ -60,14 +47,6 @@ static void mk_symbolic_m(upb_msglayout_msginit_v1 *m, int id)
 
   klee_make_symbolic(m, sizeof(*m), name_prefix);
   
-  /*
-  klee_make_symbolic(m->default_msg, sizeof(void*), strcat(name_prefix, "->default_msg"));
-  klee_make_symbolic(&m->size, sizeof(uint32_t), strcat(name_prefix, "->size"));
-  klee_make_symbolic(&m->field_count, sizeof(uint16_t), strcat(name_prefix, "->field_count"));
-  klee_make_symbolic(&m->oneof_count, sizeof(uint16_t), strcat(name_prefix, "->oneof_count"));
-  klee_make_symbolic(&m->extendable, sizeof(bool), strcat(name_prefix, "->extendable"));
-  klee_make_symbolic(&m->is_proto2, sizeof(bool), strcat(name_prefix, "->is_proto2"));
-  */
 }
 
 static void mk_assume_fields(upb_msglayout_fieldinit_v1 *fields1, upb_msglayout_fieldinit_v1 *fields2)
@@ -88,10 +67,7 @@ static void mk_assume_oneofs(upb_msglayout_oneofinit_v1 *oneofs1, upb_msglayout_
 
 static void mk_assume_m(upb_msglayout_msginit_v1 *m1, upb_msglayout_msginit_v1 *m2)
 {
-  const unsigned char *l = (void*) (m1->default_msg);
-  const unsigned char *r = (void*) (m2->default_msg);
-  for(; *l && *r; l++, r++)
-    klee_assume(*l == *r);
+  klee_assume(m1->default_msg == m2->default_msg);
   klee_assume(m1->size == m2->size);
   klee_assume(m1->field_count == m2->field_count);
   klee_assume(m1->oneof_count == m2->oneof_count);
@@ -131,6 +107,11 @@ int main(int argc, char *argv[])
   klee_make_symbolic(msg2, SIZE, "msg2");
   klee_assume(msg1[SIZE-1] == '\0');
   klee_assume(msg2[SIZE-1] == '\0');
+  int i = 0;
+  for (i = 0; i < SIZE - 1; i++)
+  {
+    klee_assume(msg1[i] == msg2[i]);
+  }
 
   // For v1 of upb_encode_message
   size_t size = 10;

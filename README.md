@@ -1,4 +1,6 @@
-UROP project on symbolic execution.
+# UROP project on symbolic execution.
+
+## Building with Docker
 
 After pulling the docker image with
 
@@ -12,32 +14,66 @@ The terminal should display
 
 `root@[CONTAINER ID]:/#`
 
-Navigate to `/home/mark/UROP/lib/re2` and from there run
 
-`make clean`
+## Building with Vagrant
 
-`CXX=clang++ make`
+`vagrant up`
 
-Do the same in the directory `/home/mark/UROP/lib/re2-2017-06-01` (Note that for this directory, the date tag, currently `2017-06-01`, may change in future versions of this project).
+## How to get started
 
-Navigate to `home/mark/UROP/lib/llvm-passes` and from there run `./build_script.sh` to compile and link the LLVM pass.
+src -> drivers for the experiments
 
-Navigate to `/home/mark/UROP` and from there run
+llvm-passes -> passes
 
-`make`
+third_party -> Third party git repositories which we will test
 
-Build **musl** by running `CC=wllvm make` in lib/musl. An archive will be generated, the full path is lib/musl/lib/libc.a. Extract the bitcode from this archive by running
+In project root
+  `git submodule init`
+  `git submodule update`
 
-`extract-bc -b -l /usr/bin/llvm-link-3.4 libc.a`
+In `llvm-passes`
+  `./build_script.sh` to build the LLVM pass
 
-The extracted bitcode will be in the same directory and it should be named `libc.a.bc`. Certain files in musl are in assembly code, since of implementation of certain functions is depednent on the target machine architecture. `wllvm` cannot lift assembly code to LLVM bitcode, and so `libc.a.bc` is missing the definitions of certain architecture-dependent functions in the musl library. Need to find a way to link these definitions at runtime, when the bitcode file is being passed to klee, perhaps by using weak linking with another C library.
+`upb-2` will contain the files for a different revision of the `upb` repository.
+`cp -R third_party/upb third_party/upb-2`
 
-The LLVM pass can be run
+In `upb` (https://github.com/google/upb)
+  `export LLVM_COMPILER=clang`
+  
+  `CC=wllvm CFLAGS+=-g make`
 
-`export PASS=/home/mark/UROP/lib/llvm-passes/build/functionrename/libFunctionRenamePass.so`
+  `cd ../upb-2`
 
-`opt-3.4 -load $PASS -functionrename < [input bitcode file] > [output bitcode file]`
+  `git checkout 1aafd41` Checkout revision with SHA `1aafd41`
 
-If [input bitcode file] is `foo.bc` and was generated from a C file, and the output file is `foo_renamed.bc`, you should be able to link `foo.bc` and `foo_r.bc` without any errors as follows:
+  `CC=wllvm CFLAGS+=-g make`
 
-`llvm-link-3.4 -o foo_linked.bc foo.bc foo_renamed.bc`
+  `cd ../..`
+
+  `extract-bc -b third_party/upb/lib/libupb.a` flag `-b` gets bitcode (`.bc` file)
+
+  `extract-bc -b third_party/upb-2/lib/libupb.a`
+
+  `cp third_party/upb/lib/libupb.a.bc libupb1.a.bc`
+
+  `cp third_party/upb-2/lib/libupb.a.bc libupb2.a.bc`
+
+In the Docker and Vagrant environment, the names of the LLVM toolchain binaries are suffixed with the version number `3.4`. So instead of `opt` and `llvm-link`, write `opt-3.4`, `llvm-link-3.4`.
+
+  `export PASS=llvm-passes/build/functionrename/libFunctionRenamePass.so`
+
+  `opt -load $PASS -functionrename < libupb2.a.bc > libupb2opt.a.bc`
+
+  `llvm-link -o libupb.a.bc libupb1.a.bc libupb2opt.a.bc`
+
+You can replace `td1.c` with any of the test drivers in `src/`
+
+  `klee-clang -g -I third_party/upb -I third_party/upb-2 src/td1.c`
+
+If `klee-clang` is not installed, run
+
+  `clang -g -c -emit-llvm -I third_party/upb -I third_party/upb-2 -I /path/to/klee/include src/td1.c`
+
+You can add additional flags such as `--only-output-states-covering-new` to only output test cases covering new code
+
+  `klee -libc=uclibc -link-llvm-lib=libupb.a.bc td1.bc`

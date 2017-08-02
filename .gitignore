@@ -14,7 +14,10 @@ lib/musl/config.mak
 **/.vagrant
 
 # Ignore llvm pass build output
-lib/llvm-passes/build
+llvm-passes/build
 
 # Ignore temporary vim files
 **/*.sw*
+
+# Ignore .temps files
+**/*.temps
