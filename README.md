@@ -42,6 +42,7 @@ cp -R third_party/upb third_party/upb-2
 ```
 
 In `upb` (https://github.com/google/upb)
+If in the Docker or Vagrant environment, you may need to pass the flag `extract-bc -b --linker /usr/bin/llvm-link-3.4 [archive]` instead of simply `extract-bc -b [archive]`. If you would rather not pass the `--linker` flag, create a symbolic link `ln -s /usr/bin/llvm-link-3.4 /usr/bin/llvm-link`.
   ```
   export LLVM_COMPILER=clang
   CC=wllvm CFLAGS+=-g make
