@@ -15,16 +15,16 @@
 int main(int argc, char *argv[])
 {
   /* msg (symbolic) */
-  char *msg1 = malloc(SIZE * SIZE);
+  char *msg1 = malloc(SIZE);
   if (!msg1)
     malloc_fail(-1);
 
-  char *msg2 = malloc(SIZE * SIZE);
+  char *msg2 = malloc(SIZE);
   if (!msg2)
     malloc_fail(-1);
 
-  klee_make_symbolic(msg1, SIZE*SIZE, "msg1");
-  klee_make_symbolic(msg2, SIZE*SIZE, "msg2");
+  klee_make_symbolic(msg1, SIZE, "msg1");
+  klee_make_symbolic(msg2, SIZE, "msg2");
   int i;
   for (i = 0; i < SIZE; i++)
   {

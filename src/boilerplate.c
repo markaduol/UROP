@@ -304,7 +304,17 @@ void mk_assume_msgs(
     upb_msglayout_msginit_v1 *m1, 
     upb_msglayout_msginit_v1 *m2)
 {
-  klee_assume(m1->default_msg == m2->default_msg);
+  // Concrete
+  m1->fields = mk_upb_msglayout_fieldinit_v1();
+  m2->fields = m1->fields;
+  m1->oneofs = mk_upb_msglayout_oneofinit_v1();
+  m2->oneofs = m1->oneofs;
+  //klee_assume(m1->default_msg == m2->default_msg);
+  m1->default_msg = malloc(sizeof(SIZE));
+  if (!m1->default_msg)
+    malloc_fail(-1);
+  m2->default_msg = m1->default_msg;
+  // Symbolic
   klee_assume(m1->size == m2->size);
   klee_assume(m1->field_count == m2->field_count);
   klee_assume(m1->oneof_count == m2->oneof_count);

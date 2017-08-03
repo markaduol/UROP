@@ -75,15 +75,16 @@ In the Docker and Vagrant environments, the names of the LLVM toolchain binaries
 To compile the test driver `td1.c`, run
   ```
   klee-clang -g -I third_party/upb -I third_party/upb-2 src/td1.c
+  klee-clang -g -I third_party/upb -I third_party/upb-2 src/boilerplate.c
   ```
 (you can replace `td1.c` with any of the test drivers in `src/`)
 
 If `klee-clang` is not installed, use your `clang` compiler instead
   ```
-  clang -g -c -emit-llvm -I third_party/upb -I third_party/upb-2 -I /path/to/klee/include src/td1.c
+  clang -g -c -emit-llvm -I third_party/upb -I third_party/upb-2 -I /path/to/klee/include src/td1.c src/boilerplate.c
   ```
   
 You can add additional flags such as `--only-output-states-covering-new` to only output test cases covering new code
   ```
-  klee -libc=uclibc -link-llvm-lib=libupb.a.bc td1.bc
+  klee -libc=uclibc -link-llvm-lib=libupb.a.bc -link-llvm-lib=boilerplate.bc td1.bc
   ```
