@@ -26,7 +26,7 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: checkout-ver obj/libupb.a.bc obj/boilerplate.bc
+all: checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
 
 checkout-ver:
 	@mkdir -p third_party/upb-2
@@ -49,18 +49,26 @@ PROJ_SRCFILES=\
 	src/utils.c\
 	src/symbolic.c
 
+TEST_SRCFILES=\
+	tests/td1.c\
+	tests/td2.c\
+	tests/td3.c\
+	tests/td4.c
+
 PROJ_HFILES=\
 	include/concrete.h\
 	include/utils.h\
 	include/symbolic.h
 
 PROJ_BCFILES=$(patsubst src/%.c,obj/%.bc,$(PROJ_SRCFILES))
+TEST_BCFILES=$(patsubst tests/%.c,obj/%.bc,$(TEST_SRCFILES))
 
 $(ARCHIVE1):
 	$(MAKE) -C third_party/upb
 
 $(ARCHIVE2):
 	$(MAKE) -C third_party/upb-2
+
 
 obj/libupb1.a.bc: $(ARCHIVE1)
 	@mkdir -p obj
@@ -80,9 +88,13 @@ obj/%.bc: src/%.c
 	@mkdir -p $$(dirname $@)
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
-obj/boilerplate.bc: $(PROJ_BCFILES)
+obj/%.bc: tests/%.c
 	@mkdir -p $$(dirname $@)
-	$(LLVM_LINK) -o $@ $^
+	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
+
+obj/boilerplate.bc: $(PROJ_BCFILES) $(TEST_BCFILES)
+	@mkdir -p $$(dirname $@)
+	$(LLVM_LINK) -o $@ $(PROJ_BCFILES)
 
 .PHONY: clean
 

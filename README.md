@@ -20,7 +20,9 @@ The terminal should display
 
 ## How to get started
 
-`src` -> drivers for the experiments
+`src` -> files needed by test drivers
+
+`tests` -> drivers for the experiments
 
 `llvm-passes` -> passes
 
@@ -44,20 +46,12 @@ In the Docker or Vagrant environments, you would instead run
 because the names of the LLVM tools are suffixed with the version number of the LLVM distribution.
 
 The `libupb.a.bc` in the `obj` directory is the bitcode file we're interested in. It contains LLVM bitcode for the 2 revisions of the `upb` library, `third_party/upb` and `third_party/upb-2` respectively.
-  
-To compile the test driver `td1.c`, run
-  ```
-  klee-clang -g -I third_party/upb -I third_party/upb-2 tests/td1.c
-  klee-clang -g -I third_party/upb -I third_party/upb-2 obj/boilerplate.c
-  ```
-(you can replace `td1.c` with any of the test drivers in `src/`)
 
-If `klee-clang` is not installed, use your `clang` compiler instead
-  ```
-  clang -g -c -emit-llvm -I third_party/upb -I third_party/upb-2 -I /path/to/klee/include tests/td1.c
-  ```
-  
-You can add additional flags such as `--only-output-states-covering-new` to only output test cases covering new code
+All the test drivers are in the `test` directory. After running `make`, their LLVM bitcode files will be in the `obj` directory. Run
+
   ```
   klee -libc=uclibc -link-llvm-lib=obj/libupb.a.bc -link-llvm-lib=obj/boilerplate.bc td1.bc
   ```
+to run the test driver `td1.bc` for example.
+  
+You can add additional flags such as `--only-output-states-covering-new` to only output test cases covering new code.
