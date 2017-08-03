@@ -50,7 +50,7 @@ To compile the test driver `td1.c`, run
   klee-clang -g -I third_party/upb -I third_party/upb-2 tests/td1.c
   klee-clang -g -I third_party/upb -I third_party/upb-2 obj/boilerplate.c
   ```
-(you can replace `td1.c` with any of the test drivers in `src/`)
+(you can replace `td1.c` with any of the test drivers in `tests/`)
 
 If `klee-clang` is not installed, use your `clang` compiler instead
   ```
