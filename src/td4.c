@@ -8,7 +8,9 @@
 #include "upb/encode.h"
 #include "upb/structs.int.h"
 
-#include "boilerplate.h"
+#include "utils.h"
+#include "concrete.h"
+#include "symbolic.h"
 
 #define SIZE 8
 
