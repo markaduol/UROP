@@ -35,28 +35,23 @@ In project root
 
 In `llvm-passes` run `./build_script.sh` to build the LLVM pass.
 
-`upb-2` will contain the files for a different revision of the `upb` repository. Copy the `upb` repository to a new directory as follows: (If you see any directories `lib` or `obj` in `third_party/upb-2`, run `make clean` in the directory.)
-
-```
-cp -R third_party/upb third_party/upb-2
-```
-
 In `upb` (https://github.com/google/upb)
 
   ```
   export LLVM_COMPILER=clang
   CC=wllvm CFLAGS+=-g make
-  cd ../upb-2
-  git checkout 1aafd41 // Checkout revision with SHA `1aafd41`
+  extract-bc -b lib/libupb.a  // flag -b gets bitcode (.bc file). You may need '--linker' flag
+  cp lib/libupb.a.bc ../../libupb1.a.bc
+  make clean
+  git checkout 1aafd41 // Checkout commit '1aafd41' in [DETACHED_HEAD](https://git-scm.com/docs/git-checkout) state
   CC=wllvm CFLAGS+=-g make
+  extract-bc -b lib/libupb.a
+  cp lib/libupb.a.bc ../../libupb2.a.bc
+  make clean
   cd ../..
-  extract-bc -b third_party/upb/lib/libupb.a  // flag -b gets bitcode (.bc file)
-  extract-bc -b third_party/upb-2/lib/libupb.a
-  cp third_party/upb/lib/libupb.a.bc libupb1.a.bc
-  cp third_party/upb-2/lib/libupb.a.bc libupb2.a.bc
   ```
 
-In the Docker or Vagrant environments, you may need to use the `--linker` flag of `extract-bc` as follows:
+You may need to use the `--linker` flag of `extract-bc`, passing in the path of your `llvm-link` binary. In the Docker and Vagrant environments, the path is `/usr/bin/llvm-link-3.4`.
 
   ```
   extract-bc -b --linker /usr/bin/llvm-link-3.4 [archive]

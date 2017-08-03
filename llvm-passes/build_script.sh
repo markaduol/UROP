@@ -3,7 +3,8 @@
 if [ ! -d "build" ]; then
   mkdir build
 else
-  rm -rf build/*
+  echo "Removing 'build' directory..."
+  rm -rf build
   mkdir build
 fi
 
