@@ -8,7 +8,8 @@ SHELL=/bin/bash
 
 current_dir=$(shell pwd)
 # can override
-COMMIT_SHA?=1aafd41
+COMMIT_SHA1?=origin/master
+COMMIT_SHA2?=1aafd41
 LLVM_VERSION=
 LLVM_OPT=opt
 LLVM_LINK=llvm-link
@@ -29,9 +30,10 @@ INSTALL_DATA=$(INSTALL) -m 644
 all: checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
 
 checkout-ver:
+	@$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
 	@mkdir -p third_party/upb-2
 	@cp -R third_party/upb/. third_party/upb-2/
-	@$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA)
+	@$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA2)
 
 ARCHIVE1=third_party/upb/lib/libupb.a
 ARCHIVE2=third_party/upb-2/lib/libupb.a
