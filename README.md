@@ -20,6 +20,9 @@ The terminal should display
 
 ## How to get started
 
+Dependencies: LLVM Version 3.4, [KLEE](klee.github.io) (>= 1.3.0) Symbolic Execution Engine, [wllvm](https://github.com/travitch/whole-program-llvm).
+See Dockerfile or Vagrantfile for general installation procedure on Ubuntu/Linux.
+
 `src` -> files needed by test drivers
 
 `tests` -> drivers for the experiments
