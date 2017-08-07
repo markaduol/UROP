@@ -5,8 +5,8 @@ set -e
 COMMIT_SHA1=undefined
 COMMIT_SHA2=origin/master #default
 
-if [[ $# -ne 2 ]]; then
-  echo "Please supply exactly 2 arguments."
+if [[ $# -lt 1 ]]; then
+  echo "Please supply 1 or 2 arguments."
   exit 1
 fi
 
@@ -20,18 +20,18 @@ do
   fi
 done
 
-i=0
+args_counter=0
 while [[ $# -gt 0 ]]
 do
   key="$1"
 
-  if [[ $i == 0 ]]; then
+  if [[ $args_counter == 0 ]]; then
     COMMIT_SHA1="$key"
   else
     COMMIT_SHA2="$key"
   fi
   shift
-  i=$((i+1))
+  args_counter=$((args_counter+1))
 done
 
 if [[ $? -ne 0 ]]; then
@@ -42,10 +42,11 @@ else
   echo "Commit SHA 2: $COMMIT_SHA2"
 fi
 
-git diff --function-context $COMMIT_SHA1 $COMMIT_SHA2 | \
-  grep -E '^(@@)' | \
-  grep "(" | \
-  sed 's/@@.*@@//' | \
-  sed 's/(.*//' | \
-  awk -F " " '{print $NF}' | \
-  uniq
+( [[ args_counter -eq 1 ]] && git diff --function-context $COMMIT_SHA1 || \  # Diff between changes working tree and HEAD of local repository
+  git diff --function-context $COMMIT_SHA1 $COMMIT_SHA2 ) | \
+awk '/(@@|\+|\-)/' | \
+awk '/[a-z0-9]\(.*\)/' | \
+awk '!/;$/' | \
+awk '/\(/' | \
+sed 's/(.*//' | \
+uniq
