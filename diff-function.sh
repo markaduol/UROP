@@ -42,11 +42,13 @@ else
   echo "Commit SHA 2: $COMMIT_SHA2"
 fi
 
-( [[ args_counter -eq 1 ]] && git diff --function-context $COMMIT_SHA1 || \  # Diff between changes working tree and HEAD of local repository
-  git diff --function-context $COMMIT_SHA1 $COMMIT_SHA2 ) | \
-awk '/(@@|\+|\-)/' | \
-awk '/[a-z0-9]\(.*\)/' | \
+# First disjunct is for diff between changes in the working tree and HEAD of local repository
+# We disregard changes in submodules
+( [[ args_counter -eq 1 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 || git diff -W --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 ) | \
+awk '!/if/ && !/switch/ && !/return/ && !/for/ && !/\/\// && !/\/\*/ && !/#/ && !/while/' | \
+awk '/[a-zA-Z_](\*)?(\s)+(\*)?[a-zA-Z0-9_]*\(.*\)/' | \
 awk '!/;$/' | \
 awk '/\(/' | \
+sed 's/@@.*@@//' | \
 sed 's/(.*//' | \
 uniq
