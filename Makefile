@@ -71,6 +71,8 @@ $(ARCHIVE1):
 $(ARCHIVE2):
 	$(MAKE) -C third_party/upb-2
 
+$(FUNCRENAME_PASS):
+	cd llvm-passes && ./build_script.sh
 
 obj/libupb1.a.bc: $(ARCHIVE1)
 	@mkdir -p obj
@@ -80,7 +82,7 @@ obj/libupb2.a.bc: $(ARCHIVE2)
 	@mkdir -p obj
 	@extract-bc -b -o $@ $< || extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
 
-obj/libupb2opt.a.bc: obj/libupb2.a.bc
+obj/libupb2opt.a.bc: obj/libupb2.a.bc $(FUNCRENAME_PASS)
 	$(LLVM_OPT) -load $(FUNCRENAME_PASS) -functionrename < $< > $@
 
 obj/libupb.a.bc: obj/libupb1.a.bc obj/libupb2opt.a.bc

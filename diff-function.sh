@@ -54,10 +54,21 @@ fi
 ( [[ args_counter -eq 1 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 -- '*.c' || \
   [[ args_counter -eq 2 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 -- '*.c' || \
   [[ args_counter -eq 3 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 -- $DIFF_FILE ) | \
-awk '!/if/ && !/switch/ && !/return/ && !/for/ && !/\/\// && !/\/\*/ && !/#/ && !/while/' | \
-awk '/[a-zA-Z_](\*\s)?(\s)*(\s\*)?[a-zA-Z0-9_]*\(.*\)/' | \
-awk '!/;$/' | \
-awk '/\(/' | \
+grep -E '^(@@)' | \
+grep '(' | \
 sed 's/@@.*@@//' | \
 sed 's/(.*//' | \
+sed 's/\*//' | \
+awk '{print $NF}' | \
 uniq
+
+# Explanation:
+# 1: Get diff
+# 2: Get only lines with hunk headers; if the 'optional section heading' of a hunk header exists, it
+#    will be the function definition of a modified function
+# 3: Pick only hunk headers containing open parentheses, as they will contain function definitions
+# 4: Get rid of '@@ [old-file-range] [new-file-range] @@' sections in the lines
+# 5: Get rid of everything after opening parentheses
+# 6: Get rid of '*' from pointers
+# 7: [See 'awk']: Print the last field (i.e: column) of the records (i.e: lines).
+# 8: Get rid of duplicate names.
