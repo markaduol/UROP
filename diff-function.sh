@@ -51,9 +51,9 @@ fi
 
 # First disjunct is for diff between changes in the working tree and HEAD of local repository
 # We disregard changes in submodules
-( [[ args_counter -eq 1 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 -- '*.c' || \
-  [[ args_counter -eq 2 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 -- '*.c' || \
-  [[ args_counter -eq 3 ]] && git diff -W --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 -- $DIFF_FILE ) | \
+( [[ args_counter -eq 1 ]] && git diff --ignore-submodules $COMMIT_SHA1 -- '*.c' || \
+  [[ args_counter -eq 2 ]] && git diff --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 -- '*.c' || \
+  [[ args_counter -eq 3 ]] && git diff --ignore-submodules $COMMIT_SHA1 $COMMIT_SHA2 -- $DIFF_PATH ) | \
 grep -E '^(@@)' | \
 grep '(' | \
 sed 's/@@.*@@//' | \
