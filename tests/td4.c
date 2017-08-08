@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
   }
   // Should both be '\0' here
   klee_assert(*res1 == *res2);
+  free(msg1);
+  free(msg2);
 
   return 0;
 }

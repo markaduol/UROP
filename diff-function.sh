@@ -11,8 +11,12 @@ die () {
   exit 1
 }
 
+if [[ $1 == "--help" ]]; then
+  die "Usage: $0 <commit-sha> [<commit-sha>] [path] (if [path] is used, two <commit-sha> arguments are required)"
+fi
+
 if [[ $# -lt 1 ]]; then
-  die "Usage: $0 <commit-sha> [<commit-sha>] [path]\n"
+  die "Usage: $0 <commit-sha> [<commit-sha>] [path] (if [path] is used, two <commit-sha> arguments are required)"
 fi
 
 for sha in "${@:1:2}"
@@ -21,7 +25,7 @@ do
     echo "Commit identifier $sha exists"
   else
     echo "Invalid commit identifier: $sha"
-    die "Usage: $0 <commit-sha> [<commit-sha>] [path]\n"
+    die "Usage: $0 <commit-sha> [<commit-sha>] [path] (if [path] is used, two <commit-sha> arguments are required)"
   fi
 done
 
