@@ -21,7 +21,7 @@ do
     echo "Commit identifier $sha exists"
   else
     echo "Invalid commit identifier: $sha"
-    exit 1
+    die "Usage: $0 <commit-sha> [<commit-sha>] [path]\n"
   fi
 done
 
@@ -42,8 +42,7 @@ do
 done
 
 if [[ $? -ne 0 ]]; then
-  echo "Error occurred"
-  exit 1
+  die "Error occurred"
 else
   echo "Commit SHA 1: $COMMIT_SHA1"
   echo "Commit SHA 2: $COMMIT_SHA2"
