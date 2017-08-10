@@ -36,11 +36,12 @@ def parse_file(arguments):
     diff_txt = ''.join(f.readlines())
     f.close
 
+                           # Problematic line: Want to ensure we do not match lines with +/-
     re_flags = re.VERBOSE | re.MULTILINE
     pattern = re.compile(r"""
-                          (^[^-+]) # Problematic line: Want to ensure we do not match lines with +/-
+                          ^(?!\+|\-).*
                           (?<=[\s:~])
-                          (\w+)
+                          ([a-zA-Z0-9_*]+)
                           \s*
                           \(([\w\s,<>\[\].=&':/*]*?)\)
                           \s*
@@ -51,8 +52,8 @@ def parse_file(arguments):
                           re_flags)
 
     cpp_keywords = ['if', 'while', 'do', 'for', 'switch']
-    results = [(i.group(2), i.group(3)) for i in pattern.finditer(diff_txt) \
-               if i.group(2) not in cpp_keywords]
+    results = [(i.group(1), i.group(2)) for i in pattern.finditer(diff_txt) \
+               if i.group(1) not in cpp_keywords]
     if output_file is None:
         for i in results:
             print (i[0] + '(' + i[1] + ')')
