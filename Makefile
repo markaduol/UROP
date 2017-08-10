@@ -35,6 +35,10 @@ checkout-ver:
 	@cp -R third_party/upb/. third_party/upb-2/
 	@$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA2)
 
+f-changes:
+	@$(GIT) -C third_party/upb diff -W --ignore-submodules $(COMMIT_SHA1) $(COMMIT_SHA2) > tmp.diff
+	@./diff-function2.py -i tmp.diff | uniq
+
 ARCHIVE1=third_party/upb/lib/libupb.a
 ARCHIVE2=third_party/upb-2/lib/libupb.a
 ARCHIVE_BC1=$(addsuffix .bc, $(ARCHIVE1))
