@@ -33,7 +33,7 @@ Type::Type(vector<const Type*>& struct_fields, bool isStruct, vector<int>& field
     eType = eStruct;
   else
     eType = eUnion;
-  sid = sequence++'
+  sid = sequence++;
 }
 
 /* Constructor for pointers */
