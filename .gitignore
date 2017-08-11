@@ -24,3 +24,6 @@ llvm-passes/build
 
 # Ignore 'upb' repository copies
 third_party/upb-*
+
+# Ignore diff files
+*.diff

@@ -7,12 +7,6 @@
 
 #define SIZE 8
 
-static void malloc_failure(int status)
-{
-  fprintf(stderr, "Malloc failure");
-  exit(status);
-}
-
 int main(int argc, char *argv[])
 {
   uint64_t x1, x2;
