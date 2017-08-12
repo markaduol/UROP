@@ -27,7 +27,11 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
+all: submodule-init checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
+
+submodule-init:
+	@$(GIT) submodule init
+	@$(GIT) submodule update
 
 checkout-ver:
 	@$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
@@ -109,3 +113,9 @@ obj/boilerplate.bc: $(PROJ_BCFILES) $(TEST_BCFILES)
 clean:
 	rm -rf obj
 	rm -rf third_party/upb-2
+	@$(GIT) -C third_party/upb checkout origin/master
+
+veryclean:
+	$(MAKE) clean
+	rm -rf llvm-passes/build
+

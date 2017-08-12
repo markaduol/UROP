@@ -9,6 +9,9 @@ else
 fi
 
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 ..
+CXXFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+cmake \
+  -DCMAKE_BUILD_TYPE=Release\
+  -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 ..
 cmake --build .
 cd ..

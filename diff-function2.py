@@ -7,17 +7,28 @@ import re
 import argparse
 import sys
 import os
+import csv
 
 def get_arguments():
     """Grab user supplied arguments using the argparse library"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input-file", required=True, help="Diff input file", type=str)
     parser.add_argument("-o", "--output-file", required=False, help="Output file", type=str)
+    parser.add_argument("-c", "--output-csv", required=False, help="Output to CSV file. You must \
+                        specify the OUTPUT FILE, using the --output-file flag, as a csv file.", \
+                        action='store_true')
     args = parser.parse_args()
 
     is_valid_file(parser, args.input_file)
 
-    return args.input_file, args.output_file
+    return args.input_file, args.output_file, args.output_csv
+
+def validate_arguments(arguments):
+    output_file = arguments[1]
+    output_csv = arguments[2]
+    if output_csv and not output_file.endswith('.csv'):
+        sys.stderr.write("The file '{}' is not a valid CSV file\n".format(output_file))
+        sys.exit(1)
 
 def is_valid_file(parser, file_name):
     """Ensure that the input file exists"""
@@ -26,15 +37,13 @@ def is_valid_file(parser, file_name):
         sys.exit(1)
 
 def gather_statistics(rev1, rev2):
-    return
-
+    return 
 
 def parse_file(arguments):
     """Gets function definitions from the supplied diff file"""
     input_file = arguments[0]
-    output_file = None
-    if len(arguments) > 1:
-        output_file = arguments[1]
+    output_file = arguments[1]
+    output_csv = arguments[2]
 
     f = open(input_file)
     diff_txt = ''.join(f.readlines())
@@ -95,13 +104,16 @@ def parse_file(arguments):
         for i in results1:
             print (i[0] + '(' + i[1] + ')')
 
-        print ('\nAdded functions:\n')
+        print ('Added functions:\n')
         for i in results2:
             print (i[0] + '(' + i[1] + ')')
 
-        print ('\nRemoved functions:\n')
+        print ('Removed functions:\n')
         for i in results3:
             print (i[0] + '(' + i[1] + ')')
+    elif output_csv and output_file is not None:
+        print ("Writing to CSV...")
+        write_to_csv(output_file, results2)
     else:
         with open(output_file, 'w') as f:
             print ('Modified functions:\n')
@@ -109,16 +121,30 @@ def parse_file(arguments):
                 s = i[0] + '(' + i[1] + ')'
                 f.write(s);
 
-            print ('\nAdded functions:\n')
+            print ('Added functions:\n')
             for i in results2:
                 s = i[0] + '(' + i[1] + ')'
                 f.write(s);
 
-            print ('\nRemoved functions:\n')
+            print ('Removed functions:\n')
             for i in results3:
                 s = i[0] + '(' + i[1] + ')'
                 f.write(s);
 
+def write_to_csv(csv_file, regex_results):
+    with open(csv_file, 'w', newline='') as f:
+        fieldnames = ['function_name', 'function_params']
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=':')
+
+        try:
+            writer.writeheader()
+            for i in regex_results:
+                writer.writerow({'function_name': i[0], 'function_params': i[1]})
+        except csv.Error as e:
+            sys.exit('file {}, line {}: {}'.format(csv_file, writer.line_num, e))
+
+
 if __name__ == "__main__":
     arguments = get_arguments()
+    validate_arguments(arguments)
     parse_file(arguments)
