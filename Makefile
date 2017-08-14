@@ -3,6 +3,7 @@ export CC=wllvm
 export CFLAGS+=-g
 CLANG=clang
 GIT=git
+PRINTF=printf
 FUNCRENAME_PASS=llvm-passes/build/functionrename/libFunctionRenamePass.so
 SHELL=/bin/bash
 
@@ -27,7 +28,7 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: submodule-init checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
+all: revisions submodule-init checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
 
 submodule-init:
 	@$(GIT) submodule init
@@ -42,6 +43,9 @@ checkout-ver:
 f-changes:
 	@$(GIT) -C third_party/upb diff -W --ignore-submodules $(COMMIT_SHA1) $(COMMIT_SHA2) > tmp.diff
 	@./diff-function2.py -i tmp.diff | uniq
+
+revisions:
+	@$(PRINTF) "$(COMMIT_SHA1)\n$(COMMIT_SHA2)" > obj/revisions.txt
 
 ARCHIVE1=third_party/upb/lib/libupb.a
 ARCHIVE2=third_party/upb-2/lib/libupb.a

@@ -61,12 +61,32 @@ def parse_file(arguments):
                           (const)?
                           \s*
                           (?={)
+                          """, re_flags)
+
+    regex_added = re.compile(r"""
+                          ^(?=\+).*
+                          (?<=[\s:~])
+                          ([a-zA-Z0-9_*]+)
+                          \s*
+                          \(([\w\s,<>\[\].=&':/*]*?)\)
+                          \s*
+                          (const)?
+                          \s*
+                          (?={)
+                          """, re_flags)
+
+    regex_removed = re.compile(r"""
+                          ^(?=\-).*
+                          (?<=[\s:~])
+                          ([a-zA-Z0-9_*]+)
+                          \s*
+                          \(([\w\s,<>\[\].=&':/*]*?)\)
+                          \s*
+                          (const)?
+                          \s*
+                          (?={)
                           """,
                           re_flags)
-    s = re.sub(r"^(?!\+|\-).*", r"^(?=\+).*", regex_modified.pattern)
-    regex_added = re.compile(s, re_flags)
-    s = re.sub(r"^(?!\+|\-).*", r"^(?=\-).*", regex_modified.pattern)
-    regex_removed = re.compile(s, re_flags)
 
     cpp_keywords = ['if', 'while', 'do', 'for', 'switch']
     results1 = [(i.group(1), i.group(2)) for i in regex_modified.finditer(diff_txt) \
