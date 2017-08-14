@@ -48,6 +48,9 @@ In the Docker or Vagrant environments, you would instead run
   ```
 because the names of the LLVM tools are suffixed with the version number of the LLVM distribution.
 
+You may also need to change some fixed paths in the Makefile such as `KLEE_INCLUDE=/klee/include` if you
+are not using the Vagrant or Docker environments. Note: Planning on migrating to a build system (CMake) in order to avoid this.
+
 The `libupb.a.bc` in the `obj` directory is the bitcode file we're interested in. It contains LLVM bitcode for the 2 revisions of the `upb` library, `third_party/upb` and `third_party/upb-2` respectively.
 
 All the test drivers are in the `test` directory. After running `make`, their LLVM bitcode files will be in the `obj` directory. Run
