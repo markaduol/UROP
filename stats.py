@@ -180,11 +180,6 @@ def main():
     for dir in klee_out_dirs:
         print ("Found KLEE output directory: '{}'".format(dir))
 
-    revision_logs = getRevisionLogs(args.dirs)
-    PRINT("Revision Logs: '{}'".format(revision_logs))
-    for log in revision_logs:
-        print ("Found revision log: '{}'".format(log))
-
     # Read contents from every 'run.stats' file
     data = [LazyEvalList(list(open(logfile))) for logfile in getLogFiles(klee_out_dirs)]
     if len(data) > 1:
@@ -193,7 +188,29 @@ def main():
     # Attach the stripped path
     data = list(zip(klee_out_dirs, data))
 
+    revision_logs = getRevisionLogs(args.dirs)
+    PRINT("Revision Logs: '{}'".format(revision_logs))
+    for log in revision_logs:
+        print ("Found revision log: '{}'".format(log))
+
+    # Read contents from revision logs
+    revision_logs_data = [list(open(log)) for log in revision_logs]
+    if len(revision_logs_data) > 1:
+        revision_logs = stripCommonPathPrefix(revision_logs)
+
+    # Attach the stripped path
+    revision_logs_data = list(zip(revision_logs, revision_logs_data))
+
+    # Get function under test and category information
+
+
     labels = getLabels()
+
+    table = []
+    total_records = []
+    total_stats = []
+
+
 
 if __name__ == "__main__":
     main()
