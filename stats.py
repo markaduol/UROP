@@ -5,7 +5,7 @@ import re
 import sys
 import argparse
 
-DEBUG=True
+DEBUG=False
 
 STATS_FILE = 'run.stats'
 REV_FILE = 'revisions.txt'
@@ -177,9 +177,13 @@ def main():
     if len(klee_out_dirs) == 0:
         print('no klee output dir found', file=sys.stderr)
         exit(1)
+    for dir in klee_out_dirs:
+        print ("Found KLEE output directory: '{}'".format(dir))
 
     revision_logs = getRevisionLogs(args.dirs)
     PRINT("Revision Logs: '{}'".format(revision_logs))
+    for log in revision_logs:
+        print ("Found revision log: '{}'".format(log))
 
     # Read contents from every 'run.stats' file
     data = [LazyEvalList(list(open(logfile))) for logfile in getLogFiles(klee_out_dirs)]
