@@ -8,9 +8,8 @@ import argparse
 import sys
 import os
 import csv
+import git
 
-from git import Repo
-from itertools import izip
 
 MODIFIED = 'modified'
 ADDED = 'added'
@@ -46,16 +45,20 @@ def get_arguments():
     """Grab user supplied arguments using the argparse library"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--repository", required=True, help="Path to git repository", type=str)
+
     parser.add_argument("--depth", default=50, required=False, 
                         help="Maximum number of commits to consider (relative to HEAD)", type=int)
-    parser.add_argument("--commits", nargs='+', action=required_length(1,2))
+
+    parser.add_argument("--commits", required=True, nargs='+', action=required_length(1,2),
+                        help="Valid commit identifiers (min 1, max 2)")
+
     parser.add_argument("-o", "--output-file", required=False, help="Output file", type=str)
     parser.add_argument("-c", "--output-csv", required=False, help="Output to CSV file. You must \
                         specify the OUTPUT FILE, using the --output-file flag, as a csv file.", \
                         action='store_true')
     args = parser.parse_args()
 
-    is_valid_file(parser, args.input_file)
+    is_valid_repo(args.repository)
 
     return args
 
@@ -66,13 +69,13 @@ def validate_arguments(arguments):
         sys.stderr.write("The file '{}' is not a valid CSV file\n".format(output_file))
         sys.exit(1)
 
-def is_valid_file(parser, file_name):
+def is_valid_repo(path):
     """Ensure that the input file exists"""
-    if not os.path.exists(file_name):
-        parser.error("The file '{}' does not exist!".format(filename))
+    if not os.path.exists(os.path.join(path, '.git')):
+        parser.error("The path '{}' does not point to a valid Git Repository!".format(path))
         sys.exit(1)
 
-def functions_added():
+def functions_added(diff_txt):
     """Return names of added functions as tuple of function name and parameters"""
     re_flags = re.VERBOSE | re.MULTILINE
     regex_added = re.compile(r"""
@@ -87,10 +90,10 @@ def functions_added():
                           (?={)
                           """, re_flags)
 
-    return [(i.group(1), i.group(2)) for i in regex_modified.finditer(diff_txt) \
+    return [(i.group(1), i.group(2)) for i in regex_added.finditer(diff_txt) \
             if i.group(1) not in cpp_keywords]
 
-def functions_removed():
+def functions_removed(diff_txt):
     """Return names of removed functions as tuple of function name and parameters"""
     re_flags = re.VERBOSE | re.MULTILINE
     regex_removed = re.compile(r"""
@@ -106,10 +109,11 @@ def functions_removed():
                           """,
                           re_flags)
 
-    return [(i.group(1), i.group(2)) for i in regex_modified.finditer(diff_txt) \
+    return [(i.group(1), i.group(2)) for i in regex_removed.finditer(diff_txt) \
             if i.group(1) not in cpp_keywords]
 
-def functions_modified(body, signature):
+# TODO: Add parameters 'body' and 'signature'
+def functions_modified(diff_txt):
     """Return names of modified functions as tuple of function name and parameters"""
     re_flags = re.VERBOSE | re.MULTILINE
     regex_modified = re.compile(r"""
@@ -128,7 +132,7 @@ def functions_modified(body, signature):
             if i.group(1) not in cpp_keywords]
 
 
-def lines_changed(diff_file):
+def lines_changed(diff_txt):
     """Returns number of lines added, lines removed, lines changed"""
     numstats = None
     pattern = r"(\d+)\s+(\d+)\s+([\w+./\\]+)" # Pattern for records
@@ -136,49 +140,58 @@ def lines_changed(diff_file):
     removed_column = []
     modified_column = []
 
-    with open(diff_file) as f:
-        for line in f:
-            x = re.match(pattern, line)
-            if not x:
-                break # All records parsed
-            added_column.append(x.group(1))
-            removed_column.append(x.group(2))
-            modified_column.append(int(x.group(1)) + int(x.group(2)))
+    for line in diff_txt:
+        x = re.match(pattern, line)
+        if not x:
+            break # All records parsed
+        added_column.append(x.group(1))
+        removed_column.append(x.group(2))
+        modified_column.append(int(x.group(1)) + int(x.group(2)))
 
     return sum(added_column), sum(removed_column), sum(modified_column)
 
 
-def get_diff_pairs(working_dir, commits):
+def get_pairwise_diffs(working_dir, commits):
     """
     Generate all diffs between pairs of commits in the list 'commits'.
     The returned list will should be a list of diff files (ending in .diff)
     """
-    g = Git(working_dir)
-    it = iter(commits)
-    diff_pairs = izip(it, it) 
-    diff = g.execute(
+    diffs = []
+    g = git.Git(working_dir)
+    commit_pairs = [(i, j) for i in commits for j in commits if i != j]
+
+    for pair in commit_pairs:
+        diff = g.execute(["git", "diff", "--numstat", pair[0], pair[1]])
+        diffs.append(diff)
+    return diffs
 
 def parse_file(arguments):
     """Gets function definitions from the supplied diff file"""
     # TODO: Need to extend to support multiple git diff files
-    repo = get_repo(arguments.repository)
+    # repo = get_repo(arguments.repository)
     commits = arguments.commits
     if len(commits) < 2:
         commits.append('HEAD')
-    diff = get_diff(repo, commits[0], commits[1]) # Diff object
+    diffs = get_pairwise_diffs(arguments.repository, commits)
     
+
+    print (diffs[0])
+    for diff in diffs:
+        process(diff, arguments)
+
+    
+def process(text, arguments):
+    """Process text (should be from git diff) and write to output stream"""
     output_file = arguments.output_file
     output_csv = arguments.output_csv
 
-    f = open(input_file)
-    diff_txt = ''.join(f.readlines())
-    f.close
+    diff_txt = ''.join(text)
 
     records = [] # Records for CSV file
-    results1 = functions_modified()
-    results2 = functions_added()
-    results3 = functions_removed()
-    numstats = lines_changed(input_file) # Length 3 array
+    results1 = functions_modified(diff_txt)
+    results2 = functions_added(diff_txt)
+    results3 = functions_removed(diff_txt)
+    numstats = lines_changed(text) # Length 3 array
 
     if output_file is None:
         print ('Modified functions:\n')
@@ -197,28 +210,22 @@ def parse_file(arguments):
         output_stats_header()
 
         output_statistics(MODIFIED, results1)
-        write_to_csv(output_file, results1, False, MODIFIED)
         
         output_statistics(ADDED, results2)
-        write_to_csv(output_file, results2, True, ADDED)
         
         output_statistics(REMOVED, results3)
-        write_to_csv(output_file, results3, True, REMOVED)
 
         output_stats_footer()
     else:
         with open(output_file, 'w') as f:
-            print ('Modified functions:\n')
             for i in results1:
                 s = i[0] + '(' + i[1] + ')'
                 f.write(s);
 
-            print ('Added functions:\n')
             for i in results2:
                 s = i[0] + '(' + i[1] + ')'
                 f.write(s);
 
-            print ('Removed functions:\n')
             for i in results3:
                 s = i[0] + '(' + i[1] + ')'
                 f.write(s);
@@ -235,32 +242,8 @@ def write_to_csv(csv_file, headers, records):
         sys.exit('file {}, line {}: {}'.format(csv_file, writer.line_num, e))
     f.close
 
-def write_to_csv(csv_file, regex_results, append, category):
-    """
-    csv_file: CSV file to which to write
-    regex_results: data which will be written
-    append: True=append to CSV file, False=otherwise
-    category: Should be 'modified', 'added' or 'removed'
-    """
-    if category == "":
-        sys.stderr.write("Error: Empty 'category' variable")
-        sys.exit(1)
-    if append:
-        f = open(csv_file, 'a', newline='')
-    else:
-        f = open(csv_file, 'w', newline='')
-    fieldnames = ['category', 'function_name', 'function_params']
-    writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=':')
 
-    try:
-        if not append:
-            writer.writeheader()
-        for i in regex_results:
-            writer.writerow({'category': category, 'function_name': i[0], 'function_params': i[1]})
-    except csv.Error as e:
-        f.close
-        sys.exit('file {}, line {}: {}'.format(csv_file, writer.line_num, e))
-    f.close
+####################### STATISTICS #########################
 
 def output_stats_header():
     print ("\n--------------STATISTICS-----------------\n")
