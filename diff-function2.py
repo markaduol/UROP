@@ -9,7 +9,17 @@ import sys
 import os
 import csv
 import git
+from itertools import combinations
 
+DEBUG=True
+
+################ DEBUG FUNCTIONS ##################
+
+def PRINT(x):
+    if DEBUG:
+        print(x)
+
+###################################################
 
 MODIFIED = 'modified'
 ADDED = 'added'
@@ -46,8 +56,12 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--repository", required=True, help="Path to git repository", type=str)
 
-    parser.add_argument("--depth", default=50, required=False, 
-                        help="Maximum number of commits to consider (relative to HEAD)", type=int)
+    parser.add_argument("--depth", default = 0, required=False, 
+                        help=
+                        """
+                        Maximum number of commits to consider (relative to supplied commit)
+                        If used, only one commit must be supplied.
+                        """, type=int)
 
     parser.add_argument("--commits", required=True, nargs='+', action=required_length(1,2),
                         help="Valid commit identifiers (min 1, max 2)")
@@ -132,110 +146,88 @@ def functions_modified(diff_txt):
             if i.group(1) not in cpp_keywords]
 
 
-def lines_changed(diff_txt):
-    """Returns number of lines added, lines removed, lines changed"""
-    numstats = None
+def lines_changed(repo_dir, commits):
+    """
+    Returns number of lines added, lines removed, lines changed
+    in specified repository, for each pair of commits.
+    Returned object is a dictionary with commit pairs as keys
+    and a 3-tuple as values.
+    """
+    results = {}
+
+    g = git.Git(repo_dir)
+    commit_pairs = [x for x in combinations(commits, 2)]
     pattern = r"(\d+)\s+(\d+)\s+([\w+./\\]+)" # Pattern for records
-    added_column = []
-    removed_column = []
-    modified_column = []
-
-    for line in diff_txt:
-        x = re.match(pattern, line)
-        if not x:
-            break # All records parsed
-        added_column.append(x.group(1))
-        removed_column.append(x.group(2))
-        modified_column.append(int(x.group(1)) + int(x.group(2)))
-
-    return sum(added_column), sum(removed_column), sum(modified_column)
-
-
-def get_pairwise_diffs(working_dir, commits):
-    """
-    Generate all diffs between pairs of commits in the list 'commits'.
-    The returned list will should be a list of diff files (ending in .diff)
-    """
-    diffs = []
-    g = git.Git(working_dir)
-    commit_pairs = [(i, j) for i in commits for j in commits if i != j]
 
     for pair in commit_pairs:
         diff = g.execute(["git", "diff", "--numstat", pair[0], pair[1]])
-        diffs.append(diff)
-    return diffs
+        print("Commit1: {}, Commit2: {}, Diff: {}".format(pair[0], pair[1], diff))
+
+        added = 0
+        removed= 0
+        modified = 0
+
+        for line in diff.splitlines():
+            x = re.match(pattern, line)
+            PRINT("Regex Match: {}".format(x))
+            if not x:
+                break # All records parsed
+            added += int(x.group(1))
+            removed += int(x.group(2))
+            modified += int(x.group(1)) + int(x.group(2))
+            results[pair] = (added, removed, modified)
+
+    return results
 
 def parse_file(arguments):
     """Gets function definitions from the supplied diff file"""
-    # TODO: Need to extend to support multiple git diff files
-    # repo = get_repo(arguments.repository)
+
+    depth = 0 # Depth of history to examine
+
+    if arguments.depth > 0 and len(arguments.commits) > 1:
+        sys.stderr.write("When using '--depth' flag, only one commit is allowed. {} supplied".format(len(arguments.commits)))
+        sys.exit(1)
+    else:
+        depth = arguments.depth
+
     commits = arguments.commits
-    if len(commits) < 2:
+    if len(commits) < 2 and not arguments.depth:
         commits.append('HEAD')
-    diffs = get_pairwise_diffs(arguments.repository, commits)
-    
 
-    print (diffs[0])
-    for diff in diffs:
-        process(diff, arguments)
-
-    
-def process(text, arguments):
-    """Process text (should be from git diff) and write to output stream"""
+    repo_dir = arguments.repository
     output_file = arguments.output_file
     output_csv = arguments.output_csv
 
-    diff_txt = ''.join(text)
-
     records = [] # Records for CSV file
-    results1 = functions_modified(diff_txt)
-    results2 = functions_added(diff_txt)
-    results3 = functions_removed(diff_txt)
-    numstats = lines_changed(text) # Length 3 array
 
-    if output_file is None:
-        print ('Modified functions:\n')
-        for i in results1:
-            print (i[0] + '(' + i[1] + ')')
+    lines_changed_dict = lines_changed(repo_dir, commits)
+    for item in lines_changed_dict.items():
+        key = item[0]
+        val = item[1]
+        record = (key[0], key[1], val[0], val[1], val[2])
+        print('Record: {}'.format(record))
+        records.append(record)
 
-        print ('Added functions:\n')
-        for i in results2:
-            print (i[0] + '(' + i[1] + ')')
-
-        print ('Removed functions:\n')
-        for i in results3:
-            print (i[0] + '(' + i[1] + ')')
-    elif output_csv and output_file is not None:
-        print ("Writing to CSV...")
-        output_stats_header()
-
-        output_statistics(MODIFIED, results1)
-        
-        output_statistics(ADDED, results2)
-        
-        output_statistics(REMOVED, results3)
-
-        output_stats_footer()
-    else:
-        with open(output_file, 'w') as f:
-            for i in results1:
-                s = i[0] + '(' + i[1] + ')'
-                f.write(s);
-
-            for i in results2:
-                s = i[0] + '(' + i[1] + ')'
-                f.write(s);
-
-            for i in results3:
-                s = i[0] + '(' + i[1] + ')'
-                f.write(s);
-
+    if output_csv and output_file is not None:
+        print("Writing to CSV...")
+        dict_records = [] # Records for CSV file in correct format (list of dictionaries)
+        headers = ['Revision 1', 'Revision 2', 'Lines added', 'Lines removed', 'Lines changed']
+        for record in records:
+            assert len(record) == len(headers)
+            #tmp = [[r] for r in record]
+            #tmp = [item for sublist in tmp for item in sublist]
+            dict_record = dict(zip(headers, record))
+            dict_records.append(dict_record)
+        write_to_csv(output_file, headers, dict_records)
+       
 def write_to_csv(csv_file, headers, records):
     f = open(csv_file, 'w', newline='')
     writer = csv.DictWriter(f, fieldnames = headers, delimiter=':')
 
     try:
+        writer.writeheader()
         for r in records:
+            print ('Row: {}'.format(r))
             writer.writerow(r)
     except csv.Error as e:
         f.close
@@ -250,14 +242,6 @@ def output_stats_header():
 
 def output_stats_footer():
     print ("\n------------------------------------------\n")
-
-def output_statistics(category, results):
-    if category == "":
-        sys.stderr.write("Error: Empty 'category' variable")
-        sys.exit(1)
-
-    num_records = len(results)
-    print ("Number of '{}' functions: '{}'".format(category, num_records))
 
 if __name__ == "__main__":
     arguments = get_arguments()
