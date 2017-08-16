@@ -9,9 +9,9 @@ import sys
 import os
 import csv
 import git
-from itertools import combinations
+from itertools import combinations, chain, groupby
 
-DEBUG=True
+DEBUG=False
 
 ################ DEBUG FUNCTIONS ##################
 
@@ -63,8 +63,8 @@ def get_arguments():
                         If used, only one commit must be supplied.
                         """, type=int)
 
-    parser.add_argument("--commits", required=True, nargs='+', action=required_length(1,2),
-                        help="Valid commit identifiers (min 1, max 2)")
+    parser.add_argument("--commits", required=True, nargs='+',
+                        help="Valid commit identifiers (min 1)")
 
     parser.add_argument("-o", "--output-file", required=False, help="Output file", type=str)
     parser.add_argument("-c", "--output-csv", required=False, help="Output to CSV file. You must \
@@ -145,37 +145,43 @@ def functions_modified(diff_txt):
     return [(i.group(1), i.group(2)) for i in regex_modified.finditer(diff_txt) \
             if i.group(1) not in cpp_keywords]
 
-
-def lines_changed(repo_dir, commits):
+def functions_changed(repo_dir, commits):
     """
-    Returns number of lines added, lines removed, lines changed
-    in specified repository, for each pair of commits.
-    Returned object is a dictionary with commit pairs as keys
-    and a 3-tuple as values.
+    Returns the number of functions and lines added, removed and modified
+    in the specified repository, for each pair of commits.
+    Returned object is a list of 8-tuples
     """
-    results = {}
+    results = []
 
     g = git.Git(repo_dir)
     commit_pairs = [x for x in combinations(commits, 2)]
-    pattern = r"(\d+)\s+(\d+)\s+([\w+./\\]+)" # Pattern for records
-
+    numstat_pattern = r"(\d+)\s+(\d+)\s+([\w+./\\]+)" # Pattern for records in '--numstat' diff
+    
     for pair in commit_pairs:
-        diff = g.execute(["git", "diff", "--numstat", pair[0], pair[1]])
-        print("Commit1: {}, Commit2: {}, Diff: {}".format(pair[0], pair[1], diff))
+        diff1 = g.execute(["git", "diff", "-W", "--ignore-submodules", pair[0], pair[1]])
+        diff2 = g.execute(["git", "diff", "--numstat", pair[0], pair[1]])
 
-        added = 0
-        removed= 0
-        modified = 0
+        l_added = 0 # Lines
+        l_removed = 0
+        l_modified = 0
+        f_added = 0 # Functions
+        f_removed = 0
+        f_modified = 0
 
-        for line in diff.splitlines():
-            x = re.match(pattern, line)
+        f_added = len(functions_added(diff1))
+        f_removed = len(functions_removed(diff1))
+        f_modified = len(functions_modified(diff1))
+
+        for line in diff2.splitlines():
+            x = re.match(numstat_pattern, line)
             PRINT("Regex Match: {}".format(x))
             if not x:
                 break # All records parsed
-            added += int(x.group(1))
-            removed += int(x.group(2))
-            modified += int(x.group(1)) + int(x.group(2))
-            results[pair] = (added, removed, modified)
+            l_added += int(x.group(1))
+            l_removed += int(x.group(2))
+            l_modified += l_added + l_removed
+
+        results.append((pair[0], pair[1], l_added, l_removed, l_modified, f_added, f_removed, f_modified))
 
     return results
 
@@ -187,31 +193,31 @@ def parse_file(arguments):
     if arguments.depth > 0 and len(arguments.commits) > 1:
         sys.stderr.write("When using '--depth' flag, only one commit is allowed. {} supplied".format(len(arguments.commits)))
         sys.exit(1)
-    else:
+    elif arguments.depth > 0 and len(arguments.commits) == 1:
         depth = arguments.depth
 
     commits = arguments.commits
     if len(commits) < 2 and not arguments.depth:
         commits.append('HEAD')
 
+    if depth > 0:
+        for i in range(depth):
+            commits.append('HEAD~{}'.format(i+1))
+
     repo_dir = arguments.repository
     output_file = arguments.output_file
     output_csv = arguments.output_csv
 
-    records = [] # Records for CSV file
+    records = functions_changed(repo_dir, commits) # Records for CSV file (as tuples)
 
-    lines_changed_dict = lines_changed(repo_dir, commits)
-    for item in lines_changed_dict.items():
-        key = item[0]
-        val = item[1]
-        record = (key[0], key[1], val[0], val[1], val[2])
-        print('Record: {}'.format(record))
-        records.append(record)
+    for record in records:
+        PRINT('Record : {}'.format(record))
 
     if output_csv and output_file is not None:
         print("Writing to CSV...")
         dict_records = [] # Records for CSV file in correct format (list of dictionaries)
-        headers = ['Revision 1', 'Revision 2', 'Lines added', 'Lines removed', 'Lines changed']
+        headers = ['Revision 1', 'Revision 2', 'Lines added', 'Lines removed', 'Lines changed', 
+                   'Functions added', 'Functions removed', 'Functions changed']
         for record in records:
             assert len(record) == len(headers)
             #tmp = [[r] for r in record]
@@ -227,7 +233,7 @@ def write_to_csv(csv_file, headers, records):
     try:
         writer.writeheader()
         for r in records:
-            print ('Row: {}'.format(r))
+            PRINT ('Row: {}'.format(r))
             writer.writerow(r)
     except csv.Error as e:
         f.close
