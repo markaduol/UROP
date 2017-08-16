@@ -179,7 +179,7 @@ def functions_changed(repo_dir, commits):
                 break # All records parsed
             l_added += int(x.group(1))
             l_removed += int(x.group(2))
-            l_modified += l_added + l_removed
+            l_modified += int(x.group(1)) + int(x.group(2))
 
         results.append((pair[0], pair[1], l_added, l_removed, l_modified, f_added, f_removed, f_modified))
 
