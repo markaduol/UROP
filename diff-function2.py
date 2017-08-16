@@ -24,7 +24,7 @@ def PRINT(x):
 MODIFIED = 'modified'
 ADDED = 'added'
 REMOVED = 'removed'
-
+VERBOSE_PREFIX = 'verbose_'
 cpp_keywords = ['if', 'while', 'do', 'for', 'switch']
 
 def required_length(_min, _max):
@@ -86,7 +86,7 @@ def validate_arguments(arguments):
 def is_valid_repo(path):
     """Ensure that the input file exists"""
     if not os.path.exists(os.path.join(path, '.git')):
-        parser.error("The path '{}' does not point to a valid Git Repository!".format(path))
+        sys.stderr.write("The path '{}' does not point to a valid Git Repository".format(path))
         sys.exit(1)
 
 def functions_added(diff_txt):
@@ -145,13 +145,14 @@ def functions_modified(diff_txt):
     return [(i.group(1), i.group(2)) for i in regex_modified.finditer(diff_txt) \
             if i.group(1) not in cpp_keywords]
 
-def functions_changed(repo_dir, commits):
+def changes(repo_dir, commits):
     """
     Returns the number of functions and lines added, removed and modified
     in the specified repository, for each pair of commits.
     Returned object is a list of 8-tuples
     """
     results = []
+    verbose_results = []
 
     g = git.Git(repo_dir)
     commit_pairs = [x for x in combinations(commits, 2)]
@@ -168,9 +169,9 @@ def functions_changed(repo_dir, commits):
         f_removed = 0
         f_modified = 0
 
-        f_added = len(functions_added(diff1))
-        f_removed = len(functions_removed(diff1))
-        f_modified = len(functions_modified(diff1))
+        f_added = functions_added(diff1)
+        f_removed = functions_removed(diff1)
+        f_modified = functions_modified(diff1)
 
         for line in diff2.splitlines():
             x = re.match(numstat_pattern, line)
@@ -181,9 +182,11 @@ def functions_changed(repo_dir, commits):
             l_removed += int(x.group(2))
             l_modified += int(x.group(1)) + int(x.group(2))
 
-        results.append((pair[0], pair[1], l_added, l_removed, l_modified, f_added, f_removed, f_modified))
+        results.append((pair[0], pair[1], l_added, l_removed, l_modified, len(f_added), len(f_removed), len(f_modified)))
 
-    return results
+        verbose_results.append((pair[0], pair[1], l_added, l_removed, l_modified, f_added, f_removed, f_modified))
+
+    return results, verbose_results
 
 def parse_file(arguments):
     """Gets function definitions from the supplied diff file"""
@@ -208,23 +211,34 @@ def parse_file(arguments):
     output_file = arguments.output_file
     output_csv = arguments.output_csv
 
-    records = functions_changed(repo_dir, commits) # Records for CSV file (as tuples)
+    records         = changes(repo_dir, commits)[0] # Records for CSV file (as tuples)
+    verbose_records = changes(repo_dir, commits)[1] # Records for CSV file (as tuples)
 
     for record in records:
         PRINT('Record : {}'.format(record))
 
     if output_csv and output_file is not None:
         print("Writing to CSV...")
-        dict_records = [] # Records for CSV file in correct format (list of dictionaries)
+        dict_records         = [] # Records for CSV file in correct format (list of dictionaries)
+        verbose_dict_records = [] # Records for CSV file in correct format (list of dictionaries)
+
         headers = ['Revision 1', 'Revision 2', 'Lines added', 'Lines removed', 'Lines changed', 
                    'Functions added', 'Functions removed', 'Functions changed']
+
         for record in records:
             assert len(record) == len(headers)
-            #tmp = [[r] for r in record]
-            #tmp = [item for sublist in tmp for item in sublist]
             dict_record = dict(zip(headers, record))
             dict_records.append(dict_record)
         write_to_csv(output_file, headers, dict_records)
+
+        for record in verbose_records:
+            assert len(record) == len(headers)
+            dict_record = dict(zip(headers, record))
+            verbose_dict_records.append(dict_record)
+
+        # Write full function declarations
+        verbose_output_file = VERBOSE_PREFIX + output_file
+        write_to_csv(verbose_output_file, headers, verbose_dict_records)
        
 def write_to_csv(csv_file, headers, records):
     f = open(csv_file, 'w', newline='')
