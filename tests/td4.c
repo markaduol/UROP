@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   const void *r = (const void*) msg2;
   char *res1 = upb_encode(l, m1, env, &size);
   char *res2 = upb_encode_renamed(r, m2, env, &size);
-  for (; *res1 && *res2; res1++, res2++)
+  for (; *res1 != '\0' && *res2 != '\0'; res1++, res2++)
   {
     klee_assert(*res1 == *res2);
   }

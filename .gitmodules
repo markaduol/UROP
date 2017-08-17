@@ -2,7 +2,3 @@
   path = third_party/upb
   url  = https://github.com/google/upb.git
   ignore = all
-[submodule "third_party/Baselibc"]
-  path = third_party/Baselibc
-  url  = https://github.com/PetteriAimonen/Baselibc.git
-  ignore = all

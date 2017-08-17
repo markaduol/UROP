@@ -8,14 +8,16 @@ SHELL=/bin/bash
 
 current_dir=$(shell pwd)
 # can override
-COMMIT_SHA1?=origin/master
-COMMIT_SHA2?=1aafd41
+COMMIT_SHA1?="72c333e"
+COMMIT_SHA2?="HEAD"
 LLVM_VERSION=
 LLVM_OPT=opt
+LLC=llc
 LLVM_LINK=llvm-link
 ifeq ($(origin LLVM_VERSION), command line)
 	LLVM_OPT=opt-$(LLVM_VERSION)
 	LLVM_LINK=llvm-link-$(LLVM_VERSION)
+	LLC=llc-$(LLVM_VERSION)
 endif
 LLVM_LINK_PATH=/usr/bin/llvm-link-$(LLVM_VERSION)
 
@@ -27,16 +29,16 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: submodule-init checkout-ver obj/libupb.a.bc obj/boilerplate.bc $(TEST_BCFILES)
+all: submodule-init checkout-ver obj/libupb.o obj/libupb.a.bc obj/boilerplate.o obj/boilerplate.bc $(TEST_BCFILES)
 
 submodule-init:
 	@$(GIT) submodule init
 	@$(GIT) submodule update
 
 checkout-ver:
-	@$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
 	@mkdir -p third_party/upb-2
 	@cp -R third_party/upb/. third_party/upb-2/
+	@$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
 	@$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA2)
 
 ARCHIVE1=third_party/upb/lib/libupb.a
@@ -92,6 +94,9 @@ obj/libupb2opt.a.bc: obj/libupb2.a.bc $(FUNCRENAME_PASS)
 obj/libupb.a.bc: obj/libupb1.a.bc obj/libupb2opt.a.bc
 	$(LLVM_LINK) -o $@ $^
 
+obj/libupb.o: obj/libupb.a.bc
+	$(LLC) -filetype=obj $< -o $@
+
 obj/%.bc: src/%.c
 	@mkdir -p $$(dirname $@)
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
@@ -104,14 +109,13 @@ obj/boilerplate.bc: $(PROJ_BCFILES) $(TEST_BCFILES)
 	@mkdir -p $$(dirname $@)
 	$(LLVM_LINK) -o $@ $(PROJ_BCFILES)
 
+obj/boilerplate.o: obj/boilerplate.bc
+	$(LLC) -filetype=obj $< -o $@
+
 .PHONY: clean
 
 clean:
 	rm -rf obj
 	rm -rf third_party/upb-2
 	@$(GIT) -C third_party/upb checkout origin/master
-
-veryclean:
-	$(MAKE) clean
 	rm -rf llvm-passes/build
-
