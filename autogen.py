@@ -6,6 +6,7 @@ import os
 import io
 import shutil
 import re
+import csv
 
 from glob import glob
 
@@ -80,9 +81,10 @@ class TDContext:
         self.id       = TDContext._id # Used to number output files (i.e: test drivers)
         self.funcname = funcname
         self.functype = functype
-        self.params   = split_by(params, ',') # So input 'params' should be single string with commas separating actual function parameters
+        self.params   = params
+        #self.params   = self.split_by(params, ',') # So input 'params' should be single string with commas separating actual function parameters
 
-    def split_by(string, delim):
+    def split_by(self, string, delim):
         return [x.strip() for x in string.split(delim)]
 
     def get_vars_from_params(self):
@@ -254,9 +256,9 @@ if __name__ == "__main__":
     Klee.output_headers(outputstream)
 
     csv_rows = read_csv(arguments.input_file)
-    functions_added = csv_rows[5]
-    functions_removed = csv_rows[6]
-    functions_modified = csv_rows[7]
+    #functions_added = csv_rows[5]
+    #functions_removed = csv_rows[6]
+    #functions_modified = csv_rows[7]
 
     #TODO: We'll just use 'functions_modified for now'. Expand functionality later.
 
