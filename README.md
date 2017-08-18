@@ -20,7 +20,8 @@ The terminal should display
 
 ## How to get started
 
-Dependencies: LLVM Version 3.4, [KLEE](klee.github.io) (>= 1.3.0) Symbolic Execution Engine, [wllvm](https://github.com/travitch/whole-program-llvm).
+Dependencies: LLVM Version 3.4, [KLEE](klee.github.io) (>= 1.3.0) Symbolic Execution Engine, [wllvm](https://github.com/travitch/whole-program-llvm), python3, GitPython package for python3.
+
 See Dockerfile or Vagrantfile for general installation procedure on Ubuntu/Linux.
 
 `src` -> files needed by test drivers
@@ -36,12 +37,10 @@ In `llvm-passes` run `./build_script.sh` to build the LLVM pass.
 In project root
 
   ```
-  git submodule init
-  git submodule update
   export LLVM_COMPILER=clang
   make
   ```
-In the Docker or Vagrant environments, you would instead run
+In the Docker or Vagrant environments, instead of `make`, run
 
   ```
   make LLVM_VERSION=3.4
@@ -56,7 +55,7 @@ The `libupb.a.bc` in the `obj` directory is the bitcode file we're interested in
 All the test drivers are in the `test` directory. After running `make`, their LLVM bitcode files will be in the `obj` directory. Run
 
   ```
-  klee -libc=uclibc -link-llvm-lib=obj/libupb.a.bc -link-llvm-lib=obj/boilerplate.bc td1.bc
+  klee -libc=uclibc -link-llvm-lib=obj/libupb.a.bc -link-llvm-lib=obj/boilerplate.bc obj/td1.bc
   ```
 to run the test driver `td1.bc` for example.
   

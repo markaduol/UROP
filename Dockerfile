@@ -5,7 +5,7 @@ FROM ubuntu:14.04
 ENV LLVM_VERSION=3.4 \
     KLEE_BUILD_DIR=/klee/build \
     KLEE_UCLIBC_SOURCE_DIR=/klee-uclibc \
-    HOME_DIR=/home/mark
+    HOME_DIR=/home/urop
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
 
@@ -33,7 +33,8 @@ RUN set -xe && \
     unzip \
     zlib1g-dev \
     flex \
-    bison
+    bison \
+    python3-tk
 
 # Install minisat
 RUN set -xe && \
@@ -100,4 +101,8 @@ RUN set -xe && \
 
 # Install wllvm
 RUN set -xe && \
-  pip install wllvm
+  pip install wllvm && \
+  pip3 install GitPython
+
+# Set workdir
+WORKDIR ${HOME_DIR}
