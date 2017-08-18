@@ -220,8 +220,14 @@ def parse_file(arguments):
         commits.append('HEAD')
 
     if depth > 0:
+        commit_pattern = r"([0-9a-f]+|HEAD)\~(\d+)$"
+        assert len(arguments.commits) == 1
+        m = re.match(commit_pattern, arguments.commits[0])
         for i in range(depth):
-            commits.insert(0, 'HEAD~{}'.format(i+1))
+            if m:
+                commits.insert(0, '{}~{}'.format(m.group(1), int(m.group(2))+i+1))
+            else:
+                commits.insert(0, '{}~{}'.format(arguments.commits[0], i+1))
 
     repo_dir = arguments.repository
     output_file = arguments.output_file
