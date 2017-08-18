@@ -70,6 +70,11 @@ def get_arguments():
                         supplied commit with previous commits in the repository history, up to
                         the depth specified.
                         """, action="store_true")
+    parser.add_argument("--show-functions", required=False, choices=['modified', 'removed', 'added'],
+                        help=
+                        """
+                        Dump added, modified or removed functions to standard output.
+                        """)
 
     parser.add_argument("--commits", required=True, nargs='+',
                         help="Valid commit identifiers (min 1)")
@@ -104,11 +109,12 @@ def is_valid_repo(path):
 def functions_added(diff_txt):
     """Return names of added functions as tuple of function name and parameters"""
     re_flags = re.VERBOSE | re.MULTILINE
+
     regex_added = re.compile(r"""
-                          ^(?=\+).*
-                          (?<=[\s:~])
-                          ([a-zA-Z0-9_*]+)
+                          ^(?:\+)
+                          (\s*[a-zA-Z_][a-zA-Z0-9_*\s]+)
                           \s*
+                          (?<!\*)
                           \(([\w\s,<>\[\].=&':/*]*?)\)
                           \s*
                           (const)?
@@ -117,36 +123,37 @@ def functions_added(diff_txt):
                           """, re_flags)
 
     return [(i.group(1), i.group(2)) for i in regex_added.finditer(diff_txt) \
-            if i.group(1) not in cpp_keywords]
+            if i.group(1).strip() not in cpp_keywords]
 
 def functions_removed(diff_txt):
     """Return names of removed functions as tuple of function name and parameters"""
     re_flags = re.VERBOSE | re.MULTILINE
+
     regex_removed = re.compile(r"""
-                          ^(?=\-).*
-                          (?<=[\s:~])
-                          ([a-zA-Z0-9_*]+)
+                          ^(?:\-)
+                          (\s*[a-zA-Z_][a-zA-Z0-9_*\s]+)
                           \s*
+                          (?<!\*)
                           \(([\w\s,<>\[\].=&':/*]*?)\)
                           \s*
                           (const)?
                           \s*
                           (?={)
-                          """,
-                          re_flags)
+                          """, re_flags)
+
 
     return [(i.group(1), i.group(2)) for i in regex_removed.finditer(diff_txt) \
-            if i.group(1) not in cpp_keywords]
+            if i.group(1).strip() not in cpp_keywords]
 
 # TODO: Add parameters 'body' and 'signature'
 def functions_modified(diff_txt):
     """Return names of modified functions as tuple of function name and parameters"""
     re_flags = re.VERBOSE | re.MULTILINE
     regex_modified = re.compile(r"""
-                          ^(?!\+|\-).*
-                          (?<=[\s:~])
-                          ([a-zA-Z0-9_*]+)
+                          ^(?!\+|\-)
+                          (\s*[a-zA-Z_][a-zA-Z0-9_*\s]+)
                           \s*
+                          (?<!\*)
                           \(([\w\s,<>\[\].=&':/*]*?)\)
                           \s*
                           (const)?
@@ -155,7 +162,7 @@ def functions_modified(diff_txt):
                           """, re_flags)
 
     return [(i.group(1), i.group(2)) for i in regex_modified.finditer(diff_txt) \
-            if i.group(1) not in cpp_keywords]
+            if i.group(1).strip() not in cpp_keywords]
 
 def changes(repo_dir, commits, arguments):
     """
@@ -234,13 +241,31 @@ def parse_file(arguments):
     for record in records:
         PRINT('Record : {}'.format(record))
 
+
+    if arguments.show_functions != None:
+        for record in verbose_records:
+            print("Revision 1: {}, Revision 2: {}".format(record[0], record[1]))
+            funcs = []
+            if arguments.show_functions == MODIFIED:
+                print("Modified Functions...\n")
+                funcs = record[7]
+            elif arguments.show_functions == ADDED:
+                print("Added Functions...\n")
+                funcs = record[5]
+            elif arguments.show_functions == REMOVED:
+                print("Removed Functions...\n")
+                funcs = record[6]
+            for f in funcs:
+                print("{}({})\n".format(f[0], f[1]))
+
+
     if output_csv and output_file is not None:
         print("Writing to CSV...")
         dict_records         = [] # Records for CSV file in correct format (list of dictionaries)
         verbose_dict_records = [] # Records for CSV file in correct format (list of dictionaries)
 
         headers = ['Revision 1', 'Revision 2', 'Lines added', 'Lines removed', 'Lines changed', 
-                   'Functions added', 'Functions removed', 'Functions changed']
+                   'Functions added', 'Functions removed', 'Functions modified']
 
         for record in records:
             assert len(record) == len(headers)

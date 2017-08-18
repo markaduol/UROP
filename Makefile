@@ -117,5 +117,5 @@ obj/boilerplate.o: obj/boilerplate.bc
 clean:
 	rm -rf obj
 	rm -rf third_party/upb-2
-	@$(GIT) -C third_party/upb checkout origin/master
+	@$(GIT) -C third_party/upb checkout master
 	rm -rf llvm-passes/build
