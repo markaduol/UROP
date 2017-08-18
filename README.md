@@ -53,19 +53,19 @@ A sample invocation is as follows
   ```
   ./diff-function.py -r third_party/upb -c -o tmp.csv --commits HEAD~1 HEAD~5 HEAD~8
   ```
---* `-r` specifying the target repository
---* `-c` to output to a CSV file
---* `-o` specifying the output file
---* `--commits` specifying the commits to compare. In this case, `HEAD~1` will be compared with `HEAD~5` and `HEAD~5` with `HEAD~8`
+* `-r` specifying the target repository
+* `-c` to output to a CSV file
+* `-o` specifying the output file
+* `--commits` specifying the commits to compare. In this case, `HEAD~1` will be compared with `HEAD~5` and `HEAD~5` with `HEAD~8`
 
 A more useful invocation may be
 
   ```
   ./diff-function.py -r third_party/upb -c -o tmp.csv --commits HEAD --depth 20 --step 2 --show-graph
   ```
---* `--depth` specifying the number of consecutive commits to examine, relative to the supplied commit (in this case `HEAD`). Note that when this flag is used, only one commit must be supplied.
---* `--step` can only be used if `--depth` is used as well.
---* `--show-graph` shows a bar chart detailing the function changes across revisions.
+* `--depth` specifying the number of consecutive commits to examine, relative to the supplied commit (in this case `HEAD`). Note that when this flag is used, only one commit must be supplied.
+* `--step` can only be used if `--depth` is used as well.
+* `--show-graph` shows a bar chart detailing the function changes across revisions.
 
   
 ## Building with Docker
