@@ -335,7 +335,7 @@ def plot_data(records):
     plt.xlabel('Revisions')
     plt.ylabel('Changes')
     plt.title('Function changes across repository revisions')
-    plt.xticks(index + bar_width / 3, revisions, rotation='vertical')
+    plt.xticks(index + bar_width / 3, revisions, rotation=70)
     plt.legend()
 
     plt.tight_layout()
