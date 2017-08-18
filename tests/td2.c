@@ -11,7 +11,7 @@
 
 #define SIZE 8
 
-/* Test Driver: upb_strdup2 */
+/* Test Driver: char *upb_strdup2(const char *s, size_t len, upb_alloc *a) */
 
 int main(int argc, char *argv[])
 {
@@ -35,14 +35,7 @@ int main(int argc, char *argv[])
 
   char *res1 = upb_strdup2(s1, SIZE, &upb_alloc_global);
   char *res2 = upb_strdup2_renamed(s2, SIZE, &upb_alloc_global);
-  const unsigned char *l = (void*) res1;
-  const unsigned char *r = (void*) res2;
-  for (; *l != '\0' && *r != '\0'; l++, r++)
-  {
-    klee_assert(*l == *r);
-  }
-  // Should both be '\0' here
-  klee_assert(*l == *r);
+  klee_assert(res1 == res2);
 
   free(s1);
   free(s2);

@@ -7,6 +7,8 @@
 
 #define SIZE 8
 
+/* Test Driver: log2ceil(int x) */
+
 int main(int argc, char *argv[])
 {
   uint64_t x1, x2;

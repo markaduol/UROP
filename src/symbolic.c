@@ -6,6 +6,7 @@
 
 #include "upb/upb.h"
 #include "upb/encode.h"
+#include "upb/msg.h"
 #include "concrete.h"
 #include "symbolic.h"
 #include "utils.h"
@@ -30,6 +31,8 @@
  * };
  *
  * */
+
+
 upb_alloc *mk_symbolic_alloc(int id)
 {
   char name[MAX_NAME_LENGTH];
@@ -154,6 +157,23 @@ void mk_assume_oneofs(
 {
   klee_assume(oneofs1->data_offset == oneofs2->data_offset);
   klee_assume(oneofs1->case_offset == oneofs2->case_offset);
+}
+
+/* upb_msglayout */
+
+struct upb_msglayout *mk_symbolic_upb_msglayout(char *name)
+{
+  struct upb_msglayout *m = malloc(sizeof(struct upb_msglayout));
+  if (!m)
+    malloc_fail(-1);
+
+  klee_make_symbolic(m, sizeof(*m), name);
+  return m;
+}
+
+void mk_assume_msglayout(struct upb_msglayout *m1, struct upb_msglayout *m2)
+{
+  mk_assume_msgs(&m1->data, &m2->data);
 }
 
 /* upb_msglayout_msginit_v1 */

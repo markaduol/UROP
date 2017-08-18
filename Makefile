@@ -97,11 +97,11 @@ obj/libupb.a.bc: obj/libupb1.a.bc obj/libupb2opt.a.bc
 obj/libupb.o: obj/libupb.a.bc
 	$(LLC) -filetype=obj $< -o $@
 
-obj/%.bc: src/%.c
+obj/%.bc: src/%.c 
 	@mkdir -p $$(dirname $@)
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
-obj/%.bc: tests/%.c
+obj/%.bc: tests/%.c 
 	@mkdir -p $$(dirname $@)
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
