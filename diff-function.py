@@ -58,11 +58,17 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--repository", required=True, help="Path to git repository", type=str)
 
-    parser.add_argument("--depth", default = 0, required=False, 
+    parser.add_argument("--depth", default=0, required=False, 
                         help=
                         """
                         Maximum number of commits to consider (relative to supplied commit)
                         If used, only one commit must be supplied.
+                        """, type=int)
+    parser.add_argument("--step", default=0, required=False,
+                        help=
+                        """
+                        Specifies the number of commits to skip when generating revision pairs.
+                        Must be used with the '--depth' flag.
                         """, type=int)
     parser.add_argument("--show-functions", required=False, choices=['modified', 'removed', 'added'],
                         help=
@@ -91,6 +97,9 @@ def get_arguments():
 def validate_arguments(arguments):
     output_file = arguments.output_file
     output_csv = arguments.output_csv
+    if arguments.step and not arguments.depth:
+        sys.stderr.write("The '--step' flag must be used in conjunction with the '--depth' flag.")
+        sys.exit(1)
     if output_csv and not output_file.endswith('.csv'):
         sys.stderr.write("The file '{}' is not a valid CSV file\n".format(output_file))
         sys.exit(1)
@@ -222,12 +231,18 @@ def parse_file(arguments):
     if depth > 0:
         commit_pattern = r"([0-9a-f]+|HEAD)\~(\d+)$"
         assert len(arguments.commits) == 1
-        m = re.match(commit_pattern, arguments.commits[0])
-        for i in range(depth):
+
+        step = 1
+        if arguments.step:
+            step = arguments.step
+
+        m = re.match(commit_pattern, commits[0])
+        supplied_commit = commits[0] # Supplied as a user argument
+        for i in range(0, depth, step):
             if m:
-                commits.insert(0, '{}~{}'.format(m.group(1), int(m.group(2))+i+1))
+                commits.insert(0, '{}~{}'.format(m.group(1), int(m.group(2))+i+step))
             else:
-                commits.insert(0, '{}~{}'.format(arguments.commits[0], i+1))
+                commits.insert(0, '{}~{}'.format(supplied_commit, i+step))
 
     repo_dir = arguments.repository
     output_file = arguments.output_file
