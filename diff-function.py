@@ -9,6 +9,8 @@ import sys
 import os
 import csv
 import git
+import numpy as np
+import matplotlib.pyplot as plt
 from itertools import combinations, chain, groupby
 
 DEBUG=False
@@ -66,6 +68,11 @@ def get_arguments():
                         help=
                         """
                         Dump added, modified or removed functions to standard output.
+                        """)
+    parser.add_argument("--show-graph", required=False, action='store_true',
+                        help=
+                        """
+                        Display a graph showing the function changes across the given revisions
                         """)
 
     parser.add_argument("--commits", required=True, nargs='+',
@@ -220,8 +227,8 @@ def parse_file(arguments):
     output_file = arguments.output_file
     output_csv = arguments.output_csv
 
-    records         = changes(repo_dir, commits, arguments)[0] # Records for CSV file (as tuples)
-    verbose_records = changes(repo_dir, commits, arguments)[1] # Records for CSV file (as tuples)
+    records         = changes(repo_dir, commits, arguments)[0] # Records for CSV file (list of tuples)
+    verbose_records = changes(repo_dir, commits, arguments)[1] # Records for CSV file (list of tuples)
 
     for record in records:
         PRINT('Record : {}'.format(record))
@@ -266,6 +273,9 @@ def parse_file(arguments):
         # Write full function declarations
         verbose_output_file = VERBOSE_PREFIX + output_file
         write_to_csv(verbose_output_file, headers, verbose_dict_records)
+
+    if arguments.show_graph:
+        plot_data(records)
        
 def write_to_csv(csv_file, headers, records):
     f = open(csv_file, 'w', newline='')
@@ -280,6 +290,57 @@ def write_to_csv(csv_file, headers, records):
         f.close
         sys.exit('file {}, line {}: {}'.format(csv_file, writer.line_num, e))
     f.close
+
+####################### PLOTTING ########################
+
+def transpose(xs):
+    """
+    Slices (transposes) as list of tuples, returning a list of lists.
+    The length of the resultant list is of course equal to the number
+    of fields for the tuples in 'xs'.
+    """
+    results = []
+    tuple_length = len(xs[0])
+    for i in range(tuple_length):
+        results.append([x[i] for x in xs])
+    return results
+
+def plot_data(records):
+    """Input parameter 'records' should be list of tuples"""
+    fig, ax = plt.subplots()
+
+    index = np.arange(len(records))
+    bar_width = 0.10
+    #opacity = 0.4
+    #error_config = {'ecolor': '0.3'}
+
+    t_records = transpose(records)
+    revisions          = list(zip(t_records[0], t_records[1]))
+    added_functions    = t_records[5]
+    removed_functions  = t_records[6]
+    modified_functions = t_records[7]
+
+    bars1 = plt.bar(index, added_functions, bar_width,
+                    color='b',
+                    label='Added')
+
+    bars2 = plt.bar(index + bar_width, removed_functions, bar_width,
+                    color='r',
+                    label='Removed')
+
+    bars3 = plt.bar(index + 2 * bar_width, modified_functions, bar_width,
+                    color='g',
+                    label='Modified')
+
+    plt.xlabel('Revisions')
+    plt.ylabel('Changes')
+    plt.title('Function changes across repository revisions')
+    plt.xticks(index + bar_width / 3, revisions, rotation='vertical')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
 
 
 ####################### STATISTICS #########################
