@@ -34,7 +34,8 @@ RUN set -xe && \
     zlib1g-dev \
     flex \
     bison \
-    python3-tk
+    python3-tk \
+    python3-pip
 
 # Install minisat
 RUN set -xe && \
@@ -101,7 +102,8 @@ RUN set -xe && \
 
 # Install wllvm
 RUN set -xe && \
-  pip install wllvm
+  pip install wllvm && \
+  pip3 install GitPython
 
 # Set workdir
 WORKDIR ${HOME_DIR}

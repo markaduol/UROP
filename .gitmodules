@@ -1,4 +1,0 @@
-[submodule "third_party/upb"]
-  path = third_party/upb
-  url  = https://github.com/google/upb.git
-  ignore = all
