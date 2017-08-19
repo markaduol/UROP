@@ -19,7 +19,7 @@ ifeq ($(origin LLVM_VERSION), command line)
 	LLVM_LINK=llvm-link-$(LLVM_VERSION)
 	LLC=llc-$(LLVM_VERSION)
 endif
-LLVM_LINK_PATH=/usr/bin/$(LLVM_LINK)
+LLVM_LINK_PATH=/usr/bin/llvm-link-$(LLVM_VERSION)
 
 # Variables mandated by GNU
 prefix=/usr/local
@@ -82,11 +82,11 @@ $(FUNCRENAME_PASS):
 
 obj/libupb1.a.bc: $(ARCHIVE1)
 	@mkdir -p obj
-	@extract-bc -b -o $@ $< || extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
+	@extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
 
 obj/libupb2.a.bc: $(ARCHIVE2)
 	@mkdir -p obj
-	@extract-bc -b -o $@ $< || extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
+	@extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
 
 obj/libupb2opt.a.bc: obj/libupb2.a.bc $(FUNCRENAME_PASS)
 	$(LLVM_OPT) -load $(FUNCRENAME_PASS) -functionrename < $< > $@
@@ -114,8 +114,13 @@ obj/boilerplate.o: obj/boilerplate.bc
 
 .PHONY: clean
 
+submodule-clean:
+	@$(MAKE) -C third_party/upb clean
+	@$(GIT) -C third_party/upb checkout master
+
 clean:
 	rm -rf obj
 	rm -rf third_party/upb-2
+	@$(MAKE) -C third_party/upb clean
 	@$(GIT) -C third_party/upb checkout master
 	rm -rf llvm-passes/build
