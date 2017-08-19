@@ -8,7 +8,7 @@ SHELL=/bin/bash
 
 current_dir=$(shell pwd)
 # can override
-COMMIT_SHA1?="72c333e"
+COMMIT_SHA1?="1aafd41"
 COMMIT_SHA2?="HEAD"
 LLVM_VERSION=
 LLVM_OPT=opt
@@ -19,7 +19,7 @@ ifeq ($(origin LLVM_VERSION), command line)
 	LLVM_LINK=llvm-link-$(LLVM_VERSION)
 	LLC=llc-$(LLVM_VERSION)
 endif
-LLVM_LINK_PATH=/usr/bin/llvm-link-$(LLVM_VERSION)
+LLVM_LINK_PATH=/usr/bin/$(LLVM_LINK)
 
 # Variables mandated by GNU
 prefix=/usr/local

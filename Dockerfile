@@ -101,8 +101,7 @@ RUN set -xe && \
 
 # Install wllvm
 RUN set -xe && \
-  pip install wllvm && \
-  pip3 install GitPython
+  pip install wllvm
 
 # Set workdir
 WORKDIR ${HOME_DIR}
