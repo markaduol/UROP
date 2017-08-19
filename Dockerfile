@@ -5,7 +5,8 @@ FROM ubuntu:14.04
 ENV LLVM_VERSION=3.4 \
     KLEE_BUILD_DIR=/klee/build \
     KLEE_UCLIBC_SOURCE_DIR=/klee-uclibc \
-    HOME_DIR=/home/urop
+    HOME_DIR=/home/urop \
+    DISPLAY :0
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
 
@@ -35,7 +36,9 @@ RUN set -xe && \
     flex \
     bison \
     python3-tk \
-    python3-pip
+    python3-pip \
+    pkg-config \
+    libfreetype6-dev
 
 # Install minisat
 RUN set -xe && \
@@ -103,7 +106,9 @@ RUN set -xe && \
 # Install wllvm
 RUN set -xe && \
   pip install wllvm && \
-  pip3 install GitPython
+  pip3 install GitPython && \
+  pip3 install numpy && \
+  pip3 install matplotlib
 
 # Set workdir
 WORKDIR ${HOME_DIR}

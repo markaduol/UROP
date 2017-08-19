@@ -98,7 +98,7 @@ def validate_arguments(arguments):
     output_file = arguments.output_file
     output_csv = arguments.output_csv
     if arguments.step and not arguments.depth:
-        sys.stderr.write("The '--step' flag must be used in conjunction with the '--depth' flag.")
+        sys.stderr.write("The '--step' flag must be used in conjunction with the '--depth' flag.\n")
         sys.exit(1)
     if output_csv and not output_file.endswith('.csv'):
         sys.stderr.write("The file '{}' is not a valid CSV file\n".format(output_file))
@@ -213,6 +213,11 @@ def changes(repo_dir, commits, arguments):
 
     return results, verbose_results
 
+def split_commit(commit):
+    """Splits commits of the form "<commit>~<integer>", returning a regex match object (or None)"""
+    pattern = r"([0-9a-f]+|HEAD)\~(\d+)$"
+    return re.match(pattern, commit)
+
 def parse_file(arguments):
     """Gets function definitions from the supplied diff file"""
 
@@ -229,14 +234,13 @@ def parse_file(arguments):
         commits.append('HEAD')
 
     if depth > 0:
-        commit_pattern = r"([0-9a-f]+|HEAD)\~(\d+)$"
         assert len(arguments.commits) == 1
 
         step = 1
         if arguments.step:
             step = arguments.step
 
-        m = re.match(commit_pattern, commits[0])
+        m = split_commit(commits[0])
         supplied_commit = commits[0] # Supplied as a user argument
         for i in range(0, depth, step):
             if m:
@@ -330,47 +334,53 @@ def plot_data(records):
     """Input parameter 'records' should be list of tuples"""
     fig, ax = plt.subplots()
 
-    index = np.arange(len(records))
+    indices = np.arange(len(records))
     bar_width = 0.10
     #opacity = 0.4
     #error_config = {'ecolor': '0.3'}
 
-    t_records = transpose(records)
+    t_records          = transpose(records)
     revisions          = list(zip(t_records[0], t_records[1]))
+    base_commit        = split_commit(revisions[0][0]) # Possibly equals 'None'
     added_functions    = t_records[5]
     removed_functions  = t_records[6]
     modified_functions = t_records[7]
 
-    bars1 = plt.bar(index, added_functions, bar_width,
+    bars1 = plt.bar(indices, added_functions, bar_width,
                     color='b',
                     label='Added')
 
-    bars2 = plt.bar(index + bar_width, removed_functions, bar_width,
+    bars2 = plt.bar(indices + bar_width, removed_functions, bar_width,
                     color='r',
                     label='Removed')
 
-    bars3 = plt.bar(index + 2 * bar_width, modified_functions, bar_width,
+    bars3 = plt.bar(indices + 2 * bar_width, modified_functions, bar_width,
                     color='g',
                     label='Modified')
 
-    plt.xlabel('Revisions')
+    if base_commit:
+        plt.xlabel('Revisions (Base: {})'.format(base_commit.group(1)))
+        xs = []
+        for i in range(len(revisions)):
+            l, r = revisions[i]
+            x = None
+            if i == len(revisions) - 1:
+                x = (int(split_commit(l).group(2)), 0)
+            else:
+                x = (int(split_commit(l).group(2)), int(split_commit(r).group(2)))
+            xs.append(x)
+        plt.xticks(indices + bar_width / 3, xs, rotation=70)
+    else:
+        plt.xlabel('Revisions')
+        plt.xticks(indices + bar_width / 3, revisions, rotation=70)
+
     plt.ylabel('Changes')
     plt.title('Function changes across repository revisions')
-    plt.xticks(index + bar_width / 3, revisions, rotation=70)
     plt.legend()
 
     plt.tight_layout()
     plt.show()
 
-
-
-####################### STATISTICS #########################
-
-def output_stats_header():
-    print ("\n--------------STATISTICS-----------------\n")
-
-def output_stats_footer():
-    print ("\n------------------------------------------\n")
 
 if __name__ == "__main__":
     arguments = get_arguments()
