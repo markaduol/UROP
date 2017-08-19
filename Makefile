@@ -5,11 +5,15 @@ CLANG=clang
 GIT=git
 FUNCRENAME_PASS=llvm-passes/build/functionrename/libFunctionRenamePass.so
 SHELL=/bin/bash
+GCC=gcc
 
 current_dir=$(shell pwd)
 # can override
+
+KLEE_BUILD_LIBS=/klee/build/lib/
+
 COMMIT_SHA1?="1aafd41"
-COMMIT_SHA2?="HEAD"
+COMMIT_SHA2?="master"
 LLVM_VERSION=
 LLVM_OPT=opt
 LLC=llc
@@ -29,7 +33,7 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: submodule-init checkout-ver obj/libupb.o obj/libupb.a.bc obj/boilerplate.o obj/boilerplate.bc $(TEST_BCFILES)
+all: submodule-init checkout-ver obj/libupb.o obj/libupb.a.bc obj/boilerplate.o obj/boilerplate.bc $(TEST_BCFILES) $(TEST_OUTFILES)
 
 submodule-init:
 	@$(GIT) submodule init
@@ -61,7 +65,9 @@ TEST_SRCFILES=\
 	tests/td1.c\
 	tests/td2.c\
 	tests/td3.c\
-	tests/td4.c
+	tests/td4.c\
+	tests/td5.c\
+	tests/td6.c
 
 PROJ_HFILES=\
 	include/concrete.h\
@@ -70,6 +76,7 @@ PROJ_HFILES=\
 
 PROJ_BCFILES=$(patsubst src/%.c,obj/%.bc,$(PROJ_SRCFILES))
 TEST_BCFILES=$(patsubst tests/%.c,obj/%.bc,$(TEST_SRCFILES))
+TEST_OUTFILES=$(patsubst tests/%.c,obj/%.out,$(TEST_SRCFILES))
 
 $(ARCHIVE1):
 	$(MAKE) -C third_party/upb
@@ -111,6 +118,10 @@ obj/boilerplate.bc: $(PROJ_BCFILES) $(TEST_BCFILES)
 
 obj/boilerplate.o: obj/boilerplate.bc
 	$(LLC) -filetype=obj $< -o $@
+
+obj/%.out: tests/%.c obj/boilerplate.o obj/libupb.o
+	@mkdir -p $$(dirname $@)
+	$(GCC) -L $(KLEE_BUILD_LIBS) -fprofile-arcs -ftest-coverage $(INCLUDE_PATHS) obj/boilerplate.o obj/libupb.o $< -o $@ -lkleeRuntest
 
 .PHONY: clean
 

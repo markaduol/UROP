@@ -27,4 +27,7 @@ third_party/upb-*
 
 # Ignore diff files
 *.diff
+
+*.gcno
 *.csv
+*.out
