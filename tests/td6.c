@@ -16,18 +16,13 @@
 
 int main()
 {
-  struct upb_msglayout *l1 = mk_symbolic_upb_msglayout("l1");
-  struct upb_msglayout *l2 = mk_symbolic_upb_msglayout("l2");
-  mk_assume_msglayout(l1, l2);
+  struct upb_msglayout *l = mk_symbolic_upb_msglayout("l");
 
-  assert(sizeof(*l1) == sizeof(*l2));
-
-  size_t res1 = upb_msg_sizeof(l1);
-  size_t res2 = upb_msg_sizeof_renamed(l2);
+  size_t res1 = upb_msg_sizeof(l);
+  size_t res2 = upb_msg_sizeof_renamed(l);
   klee_assert(res1 == res2);
 
-  free(l1);
-  free(l2);
+  free(l);
 
   return 0;
 }

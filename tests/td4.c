@@ -18,19 +18,13 @@
 
 int main()
 {
-  struct upb_msglayout *l1 = mk_symbolic_upb_msglayout("l1");
-  struct upb_msglayout *l2 = mk_symbolic_upb_msglayout("l2");
-  mk_assume_msglayout(l1, l2);
-  
-  assert(sizeof(*l1) == sizeof(*l2));
+  struct upb_msglayout *l = mk_symbolic_upb_msglayout("l");
 
-  upb_msg *res1 = upb_msg_new(l1, &upb_alloc_global);
-  upb_msg *res2 = upb_msg_new_renamed(l2, &upb_alloc_global);
+  upb_msg *res1 = upb_msg_new(l, &upb_alloc_global);
+  upb_msg *res2 = upb_msg_new_renamed(l, &upb_alloc_global);
   klee_assert(res1 == res2);
 
-
-  free(l1);
-  free(l2);
+  free(l);
 
   return 0;
 }

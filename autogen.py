@@ -7,8 +7,19 @@ import io
 import shutil
 import re
 import csv
+import sys
 
 from glob import glob
+
+DEBUG = False
+
+##################### DEBUG FUNCTIONS ######################
+
+def PRINT(x):
+    if DEBUG:
+        print(x)
+
+############################################################
 
 DEFAULT_ARR_SIZE=8
 C_HEADERS=['<stdio.h>', '<string.h>', '<stdlib.h>', '<stdint.h>']
@@ -24,15 +35,16 @@ def create_outputstream():
 
 def is_valid_outputstream(outputstream):
     if type(outputstream) is not io.StringIO:
-        sys.stderr.write("Expected type: io.StringIO\nActual type: {}".format(type(outputstream)))
+        sys.stderr.write("Expected type: io.StringIO\nActual type: {}\n".format(type(outputstream)))
         sys.exit(1)
 
 def read_csv(csv_file):
     """Reads rows of CSV file. Returns a list of tuples."""
     results = []
     with open(csv_file, newline='') as f:
-        reader = csv.reader(csv_file, delimiter=':')
+        reader = csv.reader(f, delimiter=':')
         for row in reader:
+            #PRINT('CSV Row: {}'.format(row))
             results.append(row)
     return results
 
@@ -83,6 +95,9 @@ class TDContext:
         self.functype = functype
         self.params   = params
         #self.params   = self.split_by(params, ',') # So input 'params' should be single string with commas separating actual function parameters
+
+    def to_string(self):
+        return "TDContext:\n\tID: {}\n\tName: {}\n\tType: {}\n\tParams: {}\n".format(self.id, self.funcname, self.functype, self.params)
 
     def split_by(self, string, delim):
         return [x.strip() for x in string.split(delim)]
@@ -212,6 +227,7 @@ class Klee:
 def get_arguments():
     """Grab user supplied arguments"""
     parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", required=False, help="Verbose output", action="store_true")
     parser.add_argument("-i", "--input-file", required=True, help="Input CSV file", type=str)
     parser.add_argument("-r", "--repository", required=True, help="Path to git repository", type=str)
     parser.add_argument("--sortby", required=False, choices=['lines-changed', 'lines-added', 
@@ -226,6 +242,10 @@ def get_arguments():
     parser.add_argument("-d", "--depth", required=False, default=10, type=int, help="Number of test drivers to generate (default 10)")
     args = parser.parse_args()
 
+    if args.verbose:
+        global DEBUG
+        DEBUG = True
+
     # Validate arguments
     is_valid_csv(args.input_file)
     is_valid_repo(args.repository)
@@ -233,16 +253,50 @@ def get_arguments():
 
 def is_valid_csv(input_file):
     if not input_file.endswith('.csv'):
-        sys.stderr.write("The file {} is not a valid CSV file".format(input_file))
+        sys.stderr.write("The file {} is not a valid CSV file\n".format(input_file))
         sys.exit(1)
 
 def is_valid_repo(path):
     """Ensure that the input file exists"""
     if not os.path.exists(os.path.join(path, '.git')):
-        sys.stderr.write("The path '{}' does not point to a valid Git Repository".format(path))
+        sys.stderr.write("The path '{}' does not point to a valid Git Repository\n".format(path))
         sys.exit(1)
 
-if __name__ == "__main__":
+def transpose(xs):
+    """Transposes a list of lists"""
+    results = []
+    for i in range(len(xs[0])):
+        results.append([x[i] for x in xs])
+    return results
+
+def get_candidate_funcs(funcs):
+    """
+    Filter the input list of functions, retaining only functions for which test
+    drivers can be generated. Note: 'funcs' is a list of tuples, the first element
+    is the function name and the second are the parameters.
+    """
+    pattern = r"(static|void).*"
+    return [(name, params) for name, params in funcs if not re.match(pattern, name)]
+
+def parse_funcname(fdecl):
+    """'fdecl' refers to the function declaration without parameters"""
+    pattern = r"((?:static )?[a-zA-Z_][a-zA-Z0-9_]*\s*\*?)(\s*[a-zA-Z_][a-zA-Z0-9_]*)"
+    m = re.match(pattern, fdecl)
+    if not m:
+        sys.stderr.write("Could not extract name from function {}\n".format(fdecl))
+    else:
+        return m.group(2)
+
+def parse_functype(fdecl):
+    """'fdecl' refers to the function declaration without parameters"""
+    pattern = r"((?:static )?[a-zA-Z_][a-zA-Z0-9_]*\s*\*?)(\s*[a-zA-Z_][a-zA-Z0-9_]*)"
+    m = re.match(pattern, fdecl)
+    if not m:
+        sys.stderr.write("Could not extract type from function {}\n".format(fdecl))
+    else:
+        return m.group(1)
+
+if  __name__ == "__main__":
     arguments = get_arguments()
     #TODO: Get list of records of form: (funcname, functype, list of params (incl. types))
     # The records retrieved should be indexed by pairs of revisions: (rev1, rev2)
@@ -255,10 +309,26 @@ if __name__ == "__main__":
     output_boilerplate_headers(outputstream)
     Klee.output_headers(outputstream)
 
-    csv_rows = read_csv(arguments.input_file)
-    #functions_added = csv_rows[5]
-    #functions_removed = csv_rows[6]
-    #functions_modified = csv_rows[7]
+    csv_rows = read_csv(arguments.input_file) # Note: First row will be header, so ignore it.
+    del csv_rows[0]
+    csv_cols = transpose(csv_rows)
+    
+    functions_added    = csv_cols[5][0]
+    functions_removed  = csv_cols[6][0]
+    functions_modified = csv_cols[7][0] # csv_cols[7] is a list of lists: One list from each CSV row
+    #PRINT(functions_modified)
+
+    funcs = get_candidate_funcs(functions_modified)
+    td_ctxs = []
+
+    for f in funcs:
+        fdecl = f[0]
+        params = f[1] 
+        fname = parse_funcname(fdecl)
+        ftype = parse_functype(fdecl)
+        td_ctx = TDContext(fname, ftype, params)
+        td_ctxs.append(td_ctx)
+        PRINT(td_ctx.to_str())
 
     #TODO: We'll just use 'functions_modified for now'. Expand functionality later.
 

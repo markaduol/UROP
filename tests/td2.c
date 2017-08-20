@@ -15,30 +15,21 @@
 
 int main(int argc, char *argv[])
 {
-  char *s1 = malloc(SIZE);
-  if (!s1)
+  char *s = malloc(SIZE);
+  if (!s)
     malloc_fail(-1);
 
-  klee_make_symbolic(s1, SIZE, "s1");
-  klee_assume(s1[SIZE-1] == '\0');
+  klee_make_symbolic(s, SIZE, "s");
+  klee_assume(s[SIZE-1] == '\0');
 
-  char *s2 = malloc(SIZE);
-  if (!s2)
-    malloc_fail(-1);
+  size_t len;
+  klee_make_symbolic(&len, sizeof(size_t), "len");
 
-  klee_make_symbolic(s2, SIZE, "s2");
-  klee_assume(s2[SIZE-1] == '\0');
-
-  int i = 0;
-  for (i = 0; i < SIZE-1; i++)
-    klee_assume(s1[i] == s2[i]);
-
-  char *res1 = upb_strdup2(s1, SIZE, &upb_alloc_global);
-  char *res2 = upb_strdup2_renamed(s2, SIZE, &upb_alloc_global);
+  char *res1 = upb_strdup2(s, len, &upb_alloc_global);
+  char *res2 = upb_strdup2_renamed(s, len, &upb_alloc_global);
   klee_assert(res1 == res2);
 
-  free(s1);
-  free(s2);
+  free(s);
 
   return 0;
 }

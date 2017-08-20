@@ -11,11 +11,9 @@
 
 int main(int argc, char *argv[])
 {
-  uint64_t x1, x2;
-  klee_make_symbolic(&x1, sizeof x1, "x1");
-  klee_make_symbolic(&x2, sizeof x2, "x2");
-  klee_assume(x1 == x2);
-  klee_assert(log2ceil(x1) == log2ceil_renamed(x2));
+  uint64_t x;
+  klee_make_symbolic(&x, sizeof x, "x");
+  klee_assert(log2ceil(x) == log2ceil_renamed(x));
 
   return 0;
 }

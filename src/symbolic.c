@@ -33,11 +33,8 @@
  * */
 
 
-upb_alloc *mk_symbolic_alloc(int id)
+upb_alloc *mk_symbolic_alloc(char *name)
 {
-  char name[MAX_NAME_LENGTH];
-  sprintf(name, "alloc%d", id);
-
   upb_alloc *alloc = malloc(sizeof(upb_alloc));
   if (!alloc)
     malloc_fail(-1);
@@ -53,11 +50,8 @@ void mk_assume_alloc(upb_alloc *alloc1, upb_alloc *alloc2)
 
 /* upb_arena */
 
-upb_arena *mk_symbolic_arena(int id)
+upb_arena *mk_symbolic_arena(char *name)
 {
-  char name[MAX_NAME_LENGTH];
-  sprintf(name, "arena%d", id);
-  
   upb_arena *arena = malloc(sizeof(upb_arena));
   if (!arena)
     malloc_fail(-1);
@@ -84,11 +78,8 @@ void mk_assume_arena(upb_arena *arena1, upb_arena *arena2)
 
 /* upb_env */
 
-upb_env *mk_symbolic_env(int id)
+upb_env *mk_symbolic_env(char *name)
 {
-  char name[MAX_NAME_LENGTH];
-  sprintf(name, "env%d", id);
-
   upb_env *env = malloc(sizeof(upb_env));
   if (!env)
     malloc_fail(-1);
@@ -110,11 +101,8 @@ void mk_assume_env(upb_env *env1, upb_env *env2)
 
 /* upb_msglayout_fieldinit_v1 */
 
-upb_msglayout_fieldinit_v1 *mk_symbolic_fields(int id)
+upb_msglayout_fieldinit_v1 *mk_symbolic_fields(char *name)
 {
-  char name[MAX_NAME_LENGTH];
-  sprintf(name, "fields%d", id);
-
   upb_msglayout_fieldinit_v1 *fields = malloc(sizeof(*fields));
   if (!fields)
     malloc_fail(-1);
@@ -138,11 +126,8 @@ void mk_assume_fields(
 
 /* upb_msglayout_oneofsinit_v1 */
 
-upb_msglayout_oneofinit_v1 *mk_symbolic_oneofs(int id)
+upb_msglayout_oneofinit_v1 *mk_symbolic_oneofs(char *name)
 {
-  char name[MAX_NAME_LENGTH];
-  sprintf(name, "oneofs%d", id);
-
   upb_msglayout_oneofinit_v1 *oneofs = malloc(sizeof(*oneofs));
   if (!oneofs)
     malloc_fail(-1);
@@ -178,25 +163,11 @@ void mk_assume_msglayout(struct upb_msglayout *m1, struct upb_msglayout *m2)
 
 /* upb_msglayout_msginit_v1 */
 
-upb_msglayout_msginit_v1 *mk_symbolic_msgs(int id)
+upb_msglayout_msginit_v1 *mk_symbolic_msgs(char *name)
 {
-  char name[32];
-  sprintf(name, "m%d", id);
-
   upb_msglayout_msginit_v1 *m = malloc(sizeof(upb_msglayout_msginit_v1));
   if (!m)
     malloc_fail(-1);
-  printf("Sizes:\n");
-  printf("\tm->submsgs : %lu", sizeof(m->submsgs));
-  printf("\tm->fields : %lu", sizeof(m->fields));
-  printf("\tm->oneofs : %lu", sizeof(m->oneofs));
-  printf("\tm->default_msg : %lu", sizeof(m->default_msg));
-  printf("\tm->size : %lu", sizeof(m->size));
-  printf("\tm->field_count : %lu", sizeof(m->field_count));
-  printf("\tm->oneof_count : %lu", sizeof(m->oneof_count));
-  printf("\tm->extendable : %lu", sizeof(m->extendable));
-  printf("\tm->is_proto2 : %lu\n", sizeof(m->is_proto2));
-
   klee_make_symbolic(m, sizeof(*m), name);
   return m;
 }
