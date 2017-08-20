@@ -26,7 +26,6 @@ def PRINT(x):
 MODIFIED = 'modified'
 ADDED = 'added'
 REMOVED = 'removed'
-VERBOSE_PREFIX = 'verbose_'
 cpp_keywords = ['if', 'while', 'do', 'for', 'switch']
 
 def required_length(_min, _max):
@@ -289,15 +288,6 @@ def parse_file(arguments):
             dict_record = dict(zip(headers, record))
             dict_records.append(dict_record)
         write_to_csv(output_file, headers, dict_records)
-
-        for record in verbose_records:
-            assert len(record) == len(headers)
-            dict_record = dict(zip(headers, record))
-            verbose_dict_records.append(dict_record)
-
-        # Write full function declarations
-        verbose_output_file = VERBOSE_PREFIX + output_file
-        write_to_csv(verbose_output_file, headers, verbose_dict_records)
 
     if arguments.show_graph:
         plot_data(records)
