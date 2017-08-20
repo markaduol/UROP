@@ -167,7 +167,7 @@ def functions_modified(diff_txt):
     return [(i.group(1).strip(), i.group(2).strip()) for i in regex_modified.finditer(diff_txt) \
             if i.group(1).strip() not in cpp_keywords]
 
-def changes(repo_dir, commits, arguments):
+def changes(repo_dir, commits):
     """
     Returns the number of functions and lines added, removed and modified
     in the specified repository, for each pair of commits.
@@ -251,8 +251,8 @@ def parse_file(arguments):
     output_file = arguments.output_file
     output_csv = arguments.output_csv
 
-    records         = changes(repo_dir, commits, arguments)[0] # Records for CSV file (list of tuples)
-    verbose_records = changes(repo_dir, commits, arguments)[1] # Records for CSV file (list of tuples)
+    records         = changes(repo_dir, commits)[0] # Records for CSV file (list of tuples)
+    verbose_records = changes(repo_dir, commits)[1] # Records for CSV file (list of tuples)
 
     for record in records:
         PRINT('Record : {}'.format(record))
