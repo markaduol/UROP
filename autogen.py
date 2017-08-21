@@ -181,7 +181,7 @@ class Variable:
               Name: {}
               Type: {}
               IsPtr: {}
-              Params: {}
+              Array Size: {}
               """.format(self.name, self.type, self.isPtr, self.arrSize)
 
     def get_name(self):
@@ -373,6 +373,7 @@ if  __name__ == "__main__":
 
     for i in range(1):
         record     = verbose_res[i]
+        print ("Generating Test Drivers for revision pair: ({}, {})".format(record[0], record[1]))
         f_modified = record[7]
 
         contexts = []
@@ -414,3 +415,5 @@ if  __name__ == "__main__":
             Klee.output_footer(outputstream)
 
             ctx.dump_to_cfile(outputstream)
+            print ("Test Driver for function '{}' generated successfully".format(f))
+
