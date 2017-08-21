@@ -184,7 +184,7 @@ def changes(repo_dir, commits):
     
     for pair in commit_pairs:
         diff1 = g.execute(["git", "diff", "-W", "--ignore-submodules", pair[0], pair[1]])
-        diff2 = g.execute(["git", "diff", "--numstat", pair[0], pair[1]])
+        diff2 = g.execute(["git", "diff", "--numstat", "--ignore-submodules", pair[0], pair[1]])
 
         l_added = 0 # Lines
         l_removed = 0

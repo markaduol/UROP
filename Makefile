@@ -43,7 +43,9 @@ checkout-ver:
 	@mkdir -p third_party/upb-2
 	$(GIT) clone -l --no-hardlinks third_party/upb third_party/upb-2
 	$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
+	@echo 'upb/*/** -diff' >> third_party/upb/.gitattributes
 	$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA2)
+	@echo 'upb/*/** -diff' >> third_party/upb-2/.gitattributes
 
 ARCHIVE1=third_party/upb/lib/libupb.a
 ARCHIVE2=third_party/upb-2/lib/libupb.a
@@ -123,22 +125,28 @@ obj/%.out: tests/%.c obj/boilerplate.o obj/libupb.o
 	@mkdir -p $$(dirname $@)
 	$(GCC) -L $(KLEE_BUILD_LIBS) -fprofile-arcs -ftest-coverage $(INCLUDE_PATHS) obj/boilerplate.o obj/libupb.o $< -o $@ -lkleeRuntest
 
+obj/%.bc: autotd%.c
+	@mkdir -p $$(dirname $@)
+	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
+
 .PHONY: clean
 
 submodule-clean:
 	@$(MAKE) -C third_party/upb clean
 	@$(GIT) -C third_party/upb checkout master
+	rm -f third_party/upb/.gitattributes
 
 td-clean:
 	rm -f autotd*
+	rm -f obj/autotd*
 
 clean:
 	rm -rf obj
 	rm -rf third_party/upb-2
-	@$(MAKE) -C third_party/upb clean
-	@$(GIT) -C third_party/upb checkout master
+	@$(MAKE) submodule-clean
 	rm -rf llvm-passes/build
 	rm -f *.gcda
 	rm -f *.gcno
 	rm -f *.gcov
 	rm -f *.csv
+	@$(MAKE) td-clean

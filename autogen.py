@@ -78,12 +78,14 @@ def output_lib_headers(repo_dir, outputstream):
     #   find repo_dir -type d -name '*include' -print > include_dirs
     #   for each dir in include_dirs: for each root, subdir, files in os.walk(dir): if 
     include_files = []
+    # For the 'upb' repository, the public C/C++ API is defined by all header (.h) files under
+    # "upb/", except those ending with '.int.h', which are internal-only (see 'upb' repository README)
+    path = os.path.join(repo_dir, 'upb')
 
-    for root, _, _ in os.walk(repo_dir):
-        for y in glob(os.path.join(root, '*.h')):
-            include_files.append(y)
-
-    for f in include_files:
+    for f in glob(os.path.join(path, '*.h')):
+        if f.endswith('.int.h') or f.endswith('-inl.h'): # 'upb' issue: '-inl.h' files should also be internal (waiting for confirmation)
+            continue
+        include_files.append(f)
         output_str = "#include \"{}\"\n".format(f)
         outputstream.write(output_str)
 
@@ -109,11 +111,11 @@ class TDContext:
 
     def to_string(self):
         return """
-        TDContext:
-          ID: {}
-          Name: {}
-          Type: {}
-          Params: {}
+          TDContext:
+            ID: {}
+            Name: {}
+            Type: {}
+            Params: {}
           """.format(self.id, self.funcname, self.functype, self.params)
 
     def get_vars_from_params(self):
@@ -178,10 +180,10 @@ class Variable:
     def to_string(self):
         return """
           Variable:
-              Name: {}
-              Type: {}
-              IsPtr: {}
-              Array Size: {}
+            Name: {}
+            Type: {}
+            IsPtr: {}
+            Array Size: {}
               """.format(self.name, self.type, self.isPtr, self.arrSize)
 
     def get_name(self):
@@ -329,13 +331,15 @@ def transpose(xs):
         results.append([x[i] for x in xs])
     return results
 
-def get_candidate_funcs(funcs):
+def candidate_funcs(funcs):
     """
     Filter the input list of functions, retaining only functions for which test
     drivers can be generated. Note: 'funcs' is a list of tuples, the first element
     is the function name and the second are the parameters.
     """
-    pattern = r"(static|void).*"
+    for f in funcs:
+        PRINT("Function: {}".format(f))
+    pattern = r"(\s*static\s*|\s*void\s*).*"
     return [(name, params) for name, params in funcs if not re.match(pattern, name)]
 
 def parse_funcname(fdecl):
@@ -375,10 +379,11 @@ if  __name__ == "__main__":
         record     = verbose_res[i]
         print ("Generating Test Drivers for revision pair: ({}, {})".format(record[0], record[1]))
         f_modified = record[7]
+        funcs      = candidate_funcs(f_modified)
 
         contexts = []
         
-        for f in f_modified:
+        for f in funcs:
 
             outputstream = create_outputstream()
 
@@ -395,7 +400,7 @@ if  __name__ == "__main__":
                 sys.stderr.write("Could not parse parameter string: {}\n".format(f[1]))
 
             ctx = TDContext(fname, ftype, params)
-            print(ctx.to_string())
+            PRINT(ctx.to_string())
 
             variables = ctx.get_vars_from_params()
 
@@ -405,7 +410,7 @@ if  __name__ == "__main__":
             Klee.output_init(outputstream)
 
             for var in variables:
-                print(var.to_string())
+                PRINT(var.to_string())
                 var.output_mk_var(outputstream)
                 output_newline(outputstream)
 
