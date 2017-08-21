@@ -6,7 +6,7 @@ ENV LLVM_VERSION=3.4 \
     KLEE_BUILD_DIR=/klee/build \
     KLEE_UCLIBC_SOURCE_DIR=/klee-uclibc \
     HOME_DIR=/home/urop \
-    DISPLAY :0
+    DISPLAY=:0
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
 

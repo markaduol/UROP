@@ -12,8 +12,8 @@ current_dir=$(shell pwd)
 
 KLEE_BUILD_LIBS=/klee/build/lib/
 
-COMMIT_SHA1?="master"
-COMMIT_SHA2?="1aafd41"
+COMMIT_SHA1?="1aafd41"
+COMMIT_SHA2?="master"
 LLVM_VERSION=
 LLVM_OPT=opt
 LLC=llc
@@ -129,13 +129,16 @@ submodule-clean:
 	@$(MAKE) -C third_party/upb clean
 	@$(GIT) -C third_party/upb checkout master
 
+td-clean:
+	rm -f autotd*
+
 clean:
 	rm -rf obj
 	rm -rf third_party/upb-2
 	@$(MAKE) -C third_party/upb clean
 	@$(GIT) -C third_party/upb checkout master
 	rm -rf llvm-passes/build
-	rm -rf *.gcda
-	rm -rf *.gcno
-	rm -rf *.gcov
-	rm -rf *.csv
+	rm -f *.gcda
+	rm -f *.gcno
+	rm -f *.gcov
+	rm -f *.csv
