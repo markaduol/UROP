@@ -212,9 +212,9 @@ def changes(repo_dir, commits):
 
     return results, verbose_results
 
-def split_commit(commit):
+def try_split_commit(commit):
     """Splits commits of the form "<commit>~<integer>", returning a regex match object (or None)"""
-    pattern = r"([0-9a-f]+|HEAD)\~(\d+)$"
+    pattern = r"([0-9a-f]+|[a-zA-Z_][a-zA-Z0-9_]+)\~(\d+)$"
     return re.match(pattern, commit)
 
 def parse_file(arguments):
@@ -239,7 +239,7 @@ def parse_file(arguments):
         if arguments.step:
             step = arguments.step
 
-        m = split_commit(commits[0])
+        m = try_split_commit(commits[0])
         supplied_commit = commits[0] # Supplied as a user argument
         for i in range(0, depth, step):
             if m:
@@ -331,7 +331,7 @@ def plot_data(records):
 
     t_records          = transpose(records)
     revisions          = list(zip(t_records[0], t_records[1]))
-    base_commit        = split_commit(revisions[0][0]) # Possibly equals 'None'
+    base_commit        = try_split_commit(revisions[0][0]) # Possibly equals 'None'
     added_functions    = t_records[5]
     removed_functions  = t_records[6]
     modified_functions = t_records[7]
@@ -355,9 +355,9 @@ def plot_data(records):
             l, r = revisions[i]
             x = None
             if i == len(revisions) - 1:
-                x = (int(split_commit(l).group(2)), 0)
+                x = (int(try_split_commit(l).group(2)), 0)
             else:
-                x = (int(split_commit(l).group(2)), int(split_commit(r).group(2)))
+                x = (int(try_split_commit(l).group(2)), int(try_split_commit(r).group(2)))
             xs.append(x)
         plt.xticks(indices + bar_width / 3, xs, rotation=70)
     else:

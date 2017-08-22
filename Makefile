@@ -12,8 +12,8 @@ current_dir=$(shell pwd)
 
 KLEE_BUILD_LIBS=/klee/build/lib/
 
-COMMIT_SHA1?="master~4"
-COMMIT_SHA2?="master~3"
+SHA1?="master~4"
+SHA2?="master~3"
 LLVM_VERSION=
 LLVM_OPT=opt
 LLC=llc
@@ -33,7 +33,7 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: submodule-init checkout-ver obj/libupb.o obj/libupb.a.bc obj/boilerplate.o obj/boilerplate.bc $(TEST_BCFILES) $(TEST_OUTFILES)
+all: submodule-init checkout-ver obj/libupb.o obj/libupb.a.bc obj/boilerplate.o obj/boilerplate.bc
 
 submodule-init:
 	@$(GIT) submodule init
@@ -41,9 +41,10 @@ submodule-init:
 
 checkout-ver:
 	@mkdir -p third_party/upb-2
-	$(GIT) clone -l --no-hardlinks third_party/upb third_party/upb-2
-	$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
-	$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA2)
+	$(GIT) clone -l third_party/upb third_party/upb-2
+	$(GIT) -C third_party/upb checkout $(SHA1)
+	$(GIT) -C third_party/upb-2 checkout master # Need to first checkout 'master' branch on clone
+	$(GIT) -C third_party/upb-2 checkout $(SHA2)
 	@echo 'upb/*/** -diff' >> third_party/upb/.gitattributes
 	@echo 'upb/*/** -diff' >> third_party/upb-2/.gitattributes
 
@@ -59,9 +60,7 @@ UPB_2_INCLUDE=third_party/upb-2
 INCLUDE_PATHS=-I $(KLEE_INCLUDE) -I $(PROJ_INCLUDE) -I $(UPB_INCLUDE) -I $(UPB_2_INCLUDE)
 
 PROJ_SRCFILES=\
-	src/concrete.c\
 	src/utils.c\
-	src/symbolic.c
 
 TEST_SRCFILES=\
 	tests/td1.c\
@@ -72,9 +71,7 @@ TEST_SRCFILES=\
 	tests/td6.c
 
 PROJ_HFILES=\
-	include/concrete.h\
 	include/utils.h\
-	include/symbolic.h
 
 PROJ_BCFILES=$(patsubst src/%.c,obj/%.bc,$(PROJ_SRCFILES))
 TEST_BCFILES=$(patsubst tests/%.c,obj/%.bc,$(TEST_SRCFILES))
@@ -114,7 +111,7 @@ obj/%.bc: tests/%.c
 	@mkdir -p $$(dirname $@)
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
-obj/boilerplate.bc: $(PROJ_BCFILES) $(TEST_BCFILES)
+obj/boilerplate.bc: $(PROJ_BCFILES)
 	@mkdir -p $$(dirname $@)
 	$(LLVM_LINK) -o $@ $(PROJ_BCFILES)
 
