@@ -12,8 +12,8 @@ current_dir=$(shell pwd)
 
 KLEE_BUILD_LIBS=/klee/build/lib/
 
-COMMIT_SHA1?="1aafd41"
-COMMIT_SHA2?="master"
+COMMIT_SHA1?="master~4"
+COMMIT_SHA2?="master~3"
 LLVM_VERSION=
 LLVM_OPT=opt
 LLC=llc
@@ -43,8 +43,8 @@ checkout-ver:
 	@mkdir -p third_party/upb-2
 	$(GIT) clone -l --no-hardlinks third_party/upb third_party/upb-2
 	$(GIT) -C third_party/upb checkout $(COMMIT_SHA1)
-	@echo 'upb/*/** -diff' >> third_party/upb/.gitattributes
 	$(GIT) -C third_party/upb-2 checkout $(COMMIT_SHA2)
+	@echo 'upb/*/** -diff' >> third_party/upb/.gitattributes
 	@echo 'upb/*/** -diff' >> third_party/upb-2/.gitattributes
 
 ARCHIVE1=third_party/upb/lib/libupb.a

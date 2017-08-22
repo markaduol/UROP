@@ -290,8 +290,8 @@ def get_arguments():
     """Grab user supplied arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", required=False, help="Verbose output", action="store_true")
-    parser.add_argument("-i", "--input-file", required=True, help="Input CSV file", type=str)
     parser.add_argument("-r", "--repository", required=True, help="Path to git repository", type=str)
+    parser.add_argument("--commits", required=True, nargs=2, help="Commits (exactly 2) which are used to generate test drivers", type=str)
     parser.add_argument("--sortby", required=False, choices=['lines-changed', 'lines-added', 
                         'lines-removed', 'functions-changed', 'functions-added', 'functions-removed'],
                         default='functions-changed',
@@ -309,7 +309,6 @@ def get_arguments():
         DEBUG = True
 
     # Validate arguments
-    is_valid_csv(args.input_file)
     is_valid_repo(args.repository)
     return args
 
@@ -367,13 +366,13 @@ if  __name__ == "__main__":
     # So we need to extract this info from the verbose CSV file, not the one given as input.
 
     # Get Functions for first revision
-    csv_rows = read_csv(arguments.input_file)
-    del csv_rows[0] # First row is header
 
-    csv_cols         = transpose(csv_rows)
-    commits          = csv_cols[0]  # See 'df.changes'
-    commits.append(csv_cols[1][len(csv_rows) - 1])
-    res, verbose_res = df.changes(arguments.repository, commits)
+    commit1 = arguments.commits[0]
+    commit2 = arguments.commits[1]
+    res, verbose_res = df.changes(arguments.repository, arguments.commits)
+
+    assert len(res) == 1
+    assert len(verbose_res) == 1
 
     for i in range(1):
         record     = verbose_res[i]
