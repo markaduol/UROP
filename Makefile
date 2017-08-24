@@ -76,7 +76,8 @@ PROJ_BCFILES=$(patsubst src/%.c, obj/%.bc, $(PROJ_SRCFILES))
 TEST_BCFILES=$(patsubst tests/%.c, obj/%.bc, $(TEST_SRCFILES))
 TEST_OUTFILES=$(patsubst tests/%.c, obj/%.out, $(TEST_SRCFILES))
 
-# See 'upb' Makefile
+# See 'upb' Makefile (TODO: IMPORTANT - If the interface of the 'upb' Makefile breaks,
+# everthing from this point onwards will also break.)
 UPB_MODULES=upb upb.pb upb.json upb.descriptor
 UPB_LIBS=$(patsubst %, third_party/upb/lib/lib%.a, $(UPB_MODULES))
 UPB2_LIBS=$(patsubst %, third_party/upb-2/lib/lib%.a, $(UPB_MODULES))

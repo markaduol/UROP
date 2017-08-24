@@ -89,7 +89,8 @@ def get_lib_headers(repo_dir):
     path = os.path.join(repo_dir, 'upb')
     
     for f in glob(os.path.join(path, '*.h')):
-        if f.endswith('.int.h') or f.endswith('-inl.h'): # 'upb' issue: '-inl.h' files should also be internal (waiting for confirmation)
+        if f.endswith('-inl.h'):
+        #if f.endswith('.int.h') or f.endswith('-inl.h'): # 'upb' issue: '-inl.h' files should also be internal (waiting for confirmation)
             continue
         header_files.append(f)
     return header_files
@@ -109,7 +110,7 @@ def get_structs_from_headers(header_files):
     will be performed. If any path is wrong, the header file will not be opened.
     """
     struct_pattern = re.compile(r"""
-                     ^(\s*struct\s*)
+                     \s*struct\s*
                      (\w+)\s*
                      \{.*\}\s*;""", re.VERBOSE | re.MULTILINE | re.DOTALL)
     all_structs = []
@@ -119,7 +120,7 @@ def get_structs_from_headers(header_files):
         with open(header_file, 'r') as content_file:
             try:
                 content = content_file.read()
-                found_structs = [i.group(2).strip() for i in struct_pattern.finditer(content)]
+                found_structs = [i.group(1).strip() for i in struct_pattern.finditer(content)]
                 all_structs.extend(found_structs)
 
                 PRINT("Structs declared in header file '{}':".format(header_file))
@@ -184,13 +185,7 @@ class TDContext:
         param_vars = self.get_vars_from_params()
         arguments  = []
         for var in param_vars:
-            if var.is_ptr():
-                star_count = var.get_type().count('*')
-                ptr_str    = '&' * star_count
-                # TODO: Be sure this works
-                arg_str = "{}{}".format(ptr_str, var.get_name()) 
-            else:
-                arg_str = var.get_name()
+            arg_str = var.get_name()
             arguments.append(arg_str)
         arguments = ', '.join(arguments)
 
@@ -445,17 +440,17 @@ if  __name__ == "__main__":
                 typ_begin = m.split()[0]
                 typ_begin = typ_begin.rstrip('* ') # Remove pointer asteriks and whitespace
                 typ_begin = typ_begin.lstrip() # Just to be sure
-                if typ_begin not in COMMON_DATATYPES and typ_begin not in all_structs:
-                    print("FAILURE: Unsuccessful test driver generation for function '{}':".format(f))
-                    PRINT("  Function Name: '{}'".format(fname))
-                    PRINT("  Function Return Type: '{}'".format(ftype))
-                    if typ_begin not in COMMON_DATATYPES:
-                        PRINT("  Type (no pointer asterisk) '{}' not in COMMON_DATATYPES".format(typ_begin))
-                    if typ_begin not in all_structs:
-                        PRINT("  Type (no pointer asterisk) '{}' not defined in public repository API".format(typ_begin))
-                    print("  Function '{}' requires type (no pointer asterisk) '{}', which is outside public C/C++ interface of upb repository\n".format(fname, typ_begin))
-                    unsuccessful = True
-                    break
+                #if typ_begin not in COMMON_DATATYPES and typ_begin not in all_structs:
+                 #   print("FAILURE: Unsuccessful test driver generation for function '{}':".format(f))
+                  #  PRINT("  Function Name: '{}'".format(fname))
+                   # PRINT("  Function Return Type: '{}'".format(ftype))
+                   # if typ_begin not in COMMON_DATATYPES:
+                    #    PRINT("  Type (no pointer asterisk) '{}' not in COMMON_DATATYPES".format(typ_begin))
+                    #if typ_begin not in all_structs:
+                    #    PRINT("  Type (no pointer asterisk) '{}' not defined in public repository API".format(typ_begin))
+                    #print("  Function '{}' requires type (no pointer asterisk) '{}', which is outside public C/C++ interface of upb repository\n".format(fname, typ_begin))
+                    #unsuccessful = True
+                    #break
             except IndexError as err:
                 print("FAILURE: Unsuccessful test driver generation for function '{}':".format(f))
                 print("  Regex Object: '{}'".format(str(m)))
