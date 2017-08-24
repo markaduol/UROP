@@ -5,7 +5,7 @@ FROM ubuntu:14.04
 ENV LLVM_VERSION=3.4 \
     KLEE_BUILD_DIR=/klee/build \
     KLEE_UCLIBC_SOURCE_DIR=/klee-uclibc \
-    HOME_DIR=/home/urop \
+    HOME=/home/urop \
     DISPLAY=:0
 
 # We use layered RUN instructions in order frequently commit the container state during a build.
@@ -19,7 +19,7 @@ RUN set -xe && \
     llvm-${LLVM_VERSION}-dev \
     llvm-${LLVM_VERSION}-runtime
 
-# Install klee dependencies
+# Install klee dependencies and other required and useful packages
 RUN set -xe && \
   apt-get update && \
   apt-get install -y \
@@ -38,7 +38,8 @@ RUN set -xe && \
     python3-tk \
     python3-pip \
     pkg-config \
-    libfreetype6-dev
+    libfreetype6-dev \
+    vim
 
 # Install minisat
 RUN set -xe && \
@@ -89,15 +90,14 @@ RUN set -xe && \
 
 # Add relevant files
 RUN set -xe && \
-  mkdir -p ${HOME_DIR}/UROP
+  mkdir -p ${HOME}/UROP
 
-COPY / ${HOME_DIR}/UROP
+COPY / ${HOME}/UROP
 
 # Add KLEE binary directory to path
 RUN set -xe && \
-  touch ${HOME_DIR}/.bashrc && \
-  (echo 'export PATH=$PATH:'${KLEE_BUILD_DIR}'/bin' >> ${HOME_DIR}/.bashrc) && \
-  export HOME=${HOME_DIR} && \
+  touch ${HOME}/.bashrc && \
+  (echo 'export PATH=$PATH:'${KLEE_BUILD_DIR}'/bin' >> ${HOME}/.bashrc) && \
   export LLVM_COMPILER=clang
 
 # Create symbolic links
@@ -113,4 +113,4 @@ RUN set -xe && \
   pip3 install matplotlib
 
 # Set workdir
-WORKDIR ${HOME_DIR}
+WORKDIR ${HOME}

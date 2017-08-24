@@ -2,7 +2,7 @@
 
 # Reference: https://stackoverflow.com/questions/943391/how-to-get-the-function-declaration-or-definitions-using-regex/943429#943429
 
-# Exctract function definitions from a C or C++ module
+# Extract function definitions from a C or C++ module
 import re
 import argparse
 import sys

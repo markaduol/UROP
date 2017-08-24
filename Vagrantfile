@@ -1,17 +1,64 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-$stp_script = <<SCRIPT
+# Layer 1 - set environment variables
+$layer1 = <<SCRIPT
+export LLVM_VERSION=3.4
+export KLEE_BUILD_DIR=/home/vagrant/klee/build
+export KLEE_UCLIBC_SOURCE_DIR=/home/vagrant/klee-uclibc
+export HOME=/home/vagrant
+SCRIPT
+
+# Layer 2 - Install LLVM toolchain
+$layer2 = <<SCRIPT
+apt-get update && \
+apt-get install -y \
+clang-3.4 \
+llvm-3.4 \
+llvm-3.4-dev \
+llvm-3.4-runtime
+SCRIPT
+
+# TODO: add 'dwarves'
+# Layer 3 - KLEE deps and other packages
+$layer3 = <<SCRIPT
+apt-get update && \
+apt-get install -y \
+build-essential \
+curl \
+libcap-dev \
+git \
+cmake \
+libncurses5-dev \
+python-minimal \
+python-pip \
+unzip \
+zlib1g-dev \
+flex \
+bison \
+python3-tk \
+python3-pip \
+pkg-config \
+libfreetype6-dev \
+vim \
+dos2unix
+SCRIPT
+
+# Layer 4 - Install minisat
+$layer4 = <<SCRIPT
 git clone https://github.com/stp/minisat.git
 mkdir -p minisat/build
 cd minisat/build
 cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local ../
 make
 sudo make install
+SCRIPT
+
+# Layer 5 - Install stp
+$layer5 = <<SCRIPT
 cd ../../
 git clone https://github.com/stp/stp.git
 cd stp
-git add .
 git checkout tags/2.1.2
 mkdir build
 cd build
@@ -23,7 +70,13 @@ ulimit -s unlimited
 cd ../
 SCRIPT
 
-$klee_script = <<SCRIPT
+# Layer 6 - Symbolic links
+$layer6 = <<SCRIPT
+ln -s /usr/bin/llvm-config-3.4 /usr/local/bin/llvm-config
+SCRIPT
+
+# Layer 7 - Install klee and klee-uclibc
+$layer7 = <<SCRIPT
 git clone https://github.com/klee/klee-uclibc.git
 cd klee-uclibc
 ./configure --make-llvm-lib
@@ -33,9 +86,31 @@ git clone https://github.com/klee/klee.git
 cd klee
 mkdir build
 cd build
-cmake -DENABLE_SOLVER_STP=ON -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 -DENABLE_UNIT_TESTS=OFF -DENABLE_POSIX_RUNTIME=ON -DENABLE_KLEE_UCLIBC=ON -DKLEE_UCLIBC_PATH=/klee-uclibc -DENABLE_SYSTEM_TESTS=OFF ../
+cmake -DENABLE_SOLVER_STP=ON \
+ -DLLVM_CONFIG_BINARY=/usr/bin/llvm-config-3.4 \
+ -DENABLE_UNIT_TESTS=OFF \
+ -DENABLE_POSIX_RUNTIME=ON \
+ -DENABLE_KLEE_UCLIBC=ON \
+ -DKLEE_UCLIBC_PATH=/home/vagrant/klee-uclibc \
+ -DENABLE_SYSTEM_TESTS=OFF ../
 make
 cd ../../
+SCRIPT
+
+# Layer 8 - More symlinks and environment variables
+$layer8 = <<SCRIPT
+touch /home/vagrant/.bashrc
+(echo 'export PATH=$PATH:'/home/vagrant/klee/build'/bin' >> /home/vagrant/.bashrc)
+export LLVM_COMPILER=clang
+(for f in /home/vagrant/klee/build/bin/* ; do ln -s ${f} /usr/local/bin/`basename ${f}`; done)
+SCRIPT
+
+# Layer 9 - Install additional python packages
+$layer9 = <<SCRIPT
+pip install wllvm
+pip3 install GitPython
+pip3 install numpy
+pip3 install matplotlib
 SCRIPT
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
@@ -50,24 +125,22 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   config.vm.box = "ubuntu/trusty64"
-  # Install LLVM and Clang
-  config.vm.provision "shell", inline: "apt-get update"
-  config.vm.provision "shell", inline: "apt-get install -y clang-3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-runtime "
-  # Install klee dependencies
-  config.vm.provision "shell", inline: "apt-get install -y build-essential curl libcap-dev git cmake libncurses5-dev python-minimal python-pip unzip zlib1g-dev flex bison"
-  # Install STP
-  config.vm.provision "shell", inline: $stp_script
-  # Install klee
-  config.vm.provision "shell", inline: "ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config"
-  config.vm.provision "shell", inline: $klee_script 
+  config.ssh.forward_agent = true
+  config.ssh.forward_x11 = true
+  config.vm.provision "shell", inline: $layer1
+  config.vm.provision "shell", inline: $layer2
+  config.vm.provision "shell", inline: $layer3
+  config.vm.provision "shell", inline: $layer4
+  config.vm.provision "shell", inline: $layer5
+  config.vm.provision "shell", inline: $layer6
 
-  config.vm.synced_folder "../UROP", "/home/vagrant/"
+  # TODO: Check whether '/home/urop' can be changed to /home/urop
+  config.vm.synced_folder "./", "/home/vagrant/UROP"
 
-  config.vm.provision "shell", inline: "touch /home/vagrant/.bashrc"
-  config.vm.provision "shell", inline: "echo 'export PATH=$PATH:/klee/build/bin' >> /home/vagrant/.bashrc"
-  config.vm.provision "shell", inline: "for executable in /klee/build/bin/* ; do ln -s ${executable} /usr/bin/`basename ${executable}`; done"
-  config.vm.provision "shell", inline: "pip install wllvm"
-
+  config.vm.provision "shell", inline: $layer7
+  config.vm.provision "shell", inline: $layer8
+  config.vm.provision "shell", inline: $layer9
+  config.vm.provision "shell", inline: "cd /home/urop"
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.

@@ -1,6 +1,7 @@
 # required
 export CC=wllvm
 export CFLAGS+=-g
+export CXXFLAGS+=-g
 CLANG=clang
 GIT=git
 FUNCRENAME_PASS=llvm-passes/build/functionrename/libFunctionRenamePass.so
@@ -9,8 +10,6 @@ GCC=gcc
 
 current_dir=$(shell pwd)
 # can override
-
-KLEE_BUILD_LIBS=/klee/build/lib/
 
 SHA1?="master~4"
 SHA2?="master~3"
@@ -33,7 +32,7 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: submodule-init checkout-ver obj/libupb.o obj/libupb.a.bc obj/boilerplate.o obj/boilerplate.bc
+all: submodule-init checkout-ver obj/libupb_all.o obj/libupb_all.a.bc obj/boilerplate.o obj/boilerplate.bc
 
 submodule-init:
 	@$(GIT) submodule init
@@ -41,7 +40,7 @@ submodule-init:
 
 checkout-ver:
 	@mkdir -p third_party/upb-2
-	$(GIT) clone -l third_party/upb third_party/upb-2
+	$(GIT) clone -l --no-hardlinks third_party/upb third_party/upb-2
 	$(GIT) -C third_party/upb checkout $(SHA1)
 	$(GIT) -C third_party/upb-2 checkout master # Need to first checkout 'master' branch on clone
 	$(GIT) -C third_party/upb-2 checkout $(SHA2)
@@ -50,10 +49,10 @@ checkout-ver:
 
 ARCHIVE1=third_party/upb/lib/libupb.a
 ARCHIVE2=third_party/upb-2/lib/libupb.a
-ARCHIVE_BC1=$(addsuffix .bc, $(ARCHIVE1))
-ARCHIVE_BC1=$(addsuffix .bc, $(ARCHIVE2))
 
-KLEE_INCLUDE=/klee/include
+klee_dir=$(shell find / -name "klee" -type d -print -quit 2>/dev/null | head -n1)
+KLEE_INCLUDE=$(klee_dir)/include
+KLEE_BUILD_LIBS=$(klee_dir)/build/lib/
 PROJ_INCLUDE=include/
 UPB_INCLUDE=third_party/upb
 UPB_2_INCLUDE=third_party/upb-2
@@ -73,42 +72,59 @@ TEST_SRCFILES=\
 PROJ_HFILES=\
 	include/utils.h\
 
-PROJ_BCFILES=$(patsubst src/%.c,obj/%.bc,$(PROJ_SRCFILES))
-TEST_BCFILES=$(patsubst tests/%.c,obj/%.bc,$(TEST_SRCFILES))
-TEST_OUTFILES=$(patsubst tests/%.c,obj/%.out,$(TEST_SRCFILES))
+PROJ_BCFILES=$(patsubst src/%.c, obj/%.bc, $(PROJ_SRCFILES))
+TEST_BCFILES=$(patsubst tests/%.c, obj/%.bc, $(TEST_SRCFILES))
+TEST_OUTFILES=$(patsubst tests/%.c, obj/%.out, $(TEST_SRCFILES))
 
-$(ARCHIVE1):
-	$(MAKE) -C third_party/upb
+# See 'upb' Makefile
+UPB_MODULES=upb upb.pb upb.json upb.descriptor
+UPB_LIBS=$(patsubst %, third_party/upb/lib/lib%.a, $(UPB_MODULES))
+UPB2_LIBS=$(patsubst %, third_party/upb-2/lib/lib%.a, $(UPB_MODULES))
 
-$(ARCHIVE2):
-	$(MAKE) -C third_party/upb-2
+UPB_LIBS_BC=$(patsubst %, obj/lib%1.a.bc, $(UPB_MODULES))
+UPB2_LIBS_RENAMED_BC=$(patsubst %, obj/lib%2opt.a.bc, $(UPB_MODULES))
+
+$(UPB_LIBS):
+	$(MAKE) CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q= -C third_party/upb
+
+$(UPB2_LIBS):
+	$(MAKE) CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q= -C third_party/upb-2
 
 $(FUNCRENAME_PASS):
 	cd llvm-passes && ./build_script.sh
 
-obj/libupb1.a.bc: $(ARCHIVE1)
+
+##### UPB Libs ####
+
+obj/lib%1.a.bc: third_party/upb/lib/lib%.a $(UPB_LIBS)
 	@mkdir -p obj
 	@extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
 
-obj/libupb2.a.bc: $(ARCHIVE2)
+obj/lib%2.a.bc: third_party/upb-2/lib/lib%.a $(UPB2_LIBS)
 	@mkdir -p obj
 	@extract-bc -b -l $(LLVM_LINK_PATH) -o $@ $<
 
-obj/libupb2opt.a.bc: obj/libupb2.a.bc $(FUNCRENAME_PASS)
+obj/lib%2opt.a.bc: obj/lib%2.a.bc $(FUNCRENAME_PASS)
 	$(LLVM_OPT) -load $(FUNCRENAME_PASS) -functionrename < $< > $@
 
-obj/libupb.a.bc: obj/libupb1.a.bc obj/libupb2opt.a.bc
+obj/libupb_all.a.bc: $(UPB_LIBS_BC) $(UPB2_LIBS_RENAMED_BC)
 	$(LLVM_LINK) -o $@ $^
 
-obj/libupb.o: obj/libupb.a.bc
+obj/libupb_all.o: obj/libupb_all.a.bc
 	$(LLC) -filetype=obj $< -o $@
+
+
+
+#### Test drivers and Helper C files ####
 
 obj/%.bc: src/%.c 
 	@mkdir -p $$(dirname $@)
+	@echo "KLEE Directory: $(klee_dir)"
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
 obj/%.bc: tests/%.c 
 	@mkdir -p $$(dirname $@)
+	@echo "KLEE Directory: $(klee_dir)"
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
 obj/boilerplate.bc: $(PROJ_BCFILES)
@@ -118,15 +134,17 @@ obj/boilerplate.bc: $(PROJ_BCFILES)
 obj/boilerplate.o: obj/boilerplate.bc
 	$(LLC) -filetype=obj $< -o $@
 
-obj/%.out: tests/%.c obj/boilerplate.o obj/libupb.o
+obj/%.out: tests/%.c obj/boilerplate.o obj/libupb_all.o
 	@mkdir -p $$(dirname $@)
+	@echo "KLEE Directory: $(klee_dir)"
 	$(GCC) -L $(KLEE_BUILD_LIBS) -fprofile-arcs -ftest-coverage $(INCLUDE_PATHS) obj/boilerplate.o obj/libupb.o $< -o $@ -lkleeRuntest
 
-obj/%.bc: autotd%.c
+obj/autotd%.bc: autotd%.c
 	@mkdir -p $$(dirname $@)
+	@echo "KLEE Directory: $(klee_dir)"
 	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
-.PHONY: clean
+.PHONY: clean submodule-clean td-clean
 
 submodule-clean:
 	@$(MAKE) -C third_party/upb clean

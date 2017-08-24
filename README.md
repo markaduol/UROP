@@ -268,4 +268,19 @@ You should immediately set the `HOME` environment variable
 
 `vagrant up`
 
+If your host machine is running Windows, then in Powershell
+
+`$env:DISPLAY="localhost:0.0"`
+
+Enter the Vagrant virtual machine instance
+
+```
+vagrant ssh
+cd UROP
+```
+
+If your host machine is Windows,
+
+`find . -type f -print | xargs -i dos2unix '{}'`
+
 Note: There are still some dependency issues within the Vagrant environment. This will be resolved soon and this message updated.

@@ -109,9 +109,9 @@ def get_structs_from_headers(header_files):
     will be performed. If any path is wrong, the header file will not be opened.
     """
     struct_pattern = re.compile(r"""
-                     \s*struct\s*
+                     ^(\s*struct\s*)
                      (\w+)\s*
-                     \{(.*)\}\s*;""", re.VERBOSE | re.MULTILINE | re.DOTALL)
+                     \{.*\}\s*;""", re.VERBOSE | re.MULTILINE | re.DOTALL)
     all_structs = []
 
     for header_file in header_files:
@@ -119,7 +119,7 @@ def get_structs_from_headers(header_files):
         with open(header_file, 'r') as content_file:
             try:
                 content = content_file.read()
-                found_structs = [i.group(1).strip() for i in struct_pattern.finditer(content)]
+                found_structs = [i.group(2).strip() for i in struct_pattern.finditer(content)]
                 all_structs.extend(found_structs)
 
                 PRINT("Structs declared in header file '{}':".format(header_file))
@@ -128,7 +128,6 @@ def get_structs_from_headers(header_files):
             except OSError as err:
                 print("OS Error: {0}".format(err))
     return all_structs
-
 
 class TDContext:
     _id = 0
@@ -162,7 +161,6 @@ class TDContext:
     def get_vars_from_params(self):
         """Creates list of 'Variable' objects from 'self''s list of 'params'"""
         variables = []
-        #pattern = r"([a-zA-Z_][a-zA-Z0-9_]*)(?:\s*\**\s*)([a-zA-Z_][a-zA-Z0-9_]*)" # TODO: Potential false positive for x*y or similar
         pattern = r"((?:const |volatile )?[a-zA-Z_][a-zA-Z0-9_]*\s*\**)(\s*[a-zA-Z_][a-zA-Z0-9_]*)"
         for param in self.params:
             x = re.match(pattern, param)
@@ -377,9 +375,11 @@ def candidate_funcs(funcs):
     drivers can be generated. Note: 'funcs' is a list of tuples, the first element
     is the function name and the second are the parameters.
     """
+    PRINT("Candidate Functions:")
     for f in funcs:
-        PRINT("Function: {}".format(f))
+        PRINT("  Function: {}".format(f))
     pattern = r"(\s*static\s*|\s*void\s*).*"
+    PRINT("\n")
     return [(name, params) for name, params in funcs if not re.match(pattern, name)]
 
 def parse_funcname(fdecl):
@@ -418,73 +418,81 @@ if  __name__ == "__main__":
     lib_headers = get_lib_headers(arguments.repository)
     all_structs = get_structs_from_headers(lib_headers)
 
-    for i in range(1):
-        record     = verbose_res[i]
-        print ("Generating Test Drivers for revision pair: ({}, {})".format(record[0], record[1]))
-        f_modified = record[7]
-        funcs      = candidate_funcs(f_modified)
+    record     = verbose_res[0]
+    print ("Generating Test Drivers for revision pair: ({}, {})\n".format(record[0], record[1]))
+    f_modified = record[7]
+    funcs      = candidate_funcs(f_modified)
 
-        contexts = []
-        cv_pattern     = r"\s*(const|volatile)\s*(\**)"
-        struct_pattern = r"\s*struct\s*(\**)\s*"
+    contexts = []
+    cv_pattern     = r"\s*(const|volatile)\s*(\**)"
+    struct_pattern = r"\s*struct\s*(\**)\s*"
         
-        for f in funcs:
-            fname  = parse_funcname(f[0])
-            ftype  = parse_functype(f[0])
-            m = re.sub(cv_pattern, '', ftype)
+    for f in funcs:
+        unsuccessful = False # Important to set this before anything else
+        print ("Generating Test Driver for function '{}'...".format(f))
+        fname  = parse_funcname(f[0])
+        ftype  = parse_functype(f[0])
+        params = re.split(r"\s*,\s*", f[1])
+
+        if not params:
+            sys.stderr.write("ERROR: Could not parse parameter string: {}\n".format(f[1]))
+            sys.exit(-1)
+
+        for typ in params + [ftype]:
+            m = re.sub(cv_pattern, '', typ)
             m = re.sub(struct_pattern, '', m)
             try:
-                ftype_begin = m.split()[0]
-                ftype_begin = ftype_begin.rstrip('*') # Remove pointer asteriks
-                if ftype_begin not in COMMON_DATATYPES and ftype_begin not in all_structs:
+                typ_begin = m.split()[0]
+                typ_begin = typ_begin.rstrip('* ') # Remove pointer asteriks and whitespace
+                typ_begin = typ_begin.lstrip() # Just to be sure
+                if typ_begin not in COMMON_DATATYPES and typ_begin not in all_structs:
                     print("FAILURE: Unsuccessful test driver generation for function '{}':".format(f))
-                    PRINT("Function Name: '{}'".format(fname))
-                    PRINT("Function Type: '{}'".format(ftype))
-                    if ftype_begin not in COMMON_DATATYPES:
-                        PRINT("Function type '{}' not in COMMON_DATATYPES".format(ftype))
-                    if ftype_begin not in all_structs:
-                        PRINT("Function type '{}' not defined in public repository API".format(ftype))
-                    print("Function '{}' has return type '{}', which is outside public C/C++ interface of upb repository".format(fname, ftype))
-                    continue
+                    PRINT("  Function Name: '{}'".format(fname))
+                    PRINT("  Function Return Type: '{}'".format(ftype))
+                    if typ_begin not in COMMON_DATATYPES:
+                        PRINT("  Type (no pointer asterisk) '{}' not in COMMON_DATATYPES".format(typ_begin))
+                    if typ_begin not in all_structs:
+                        PRINT("  Type (no pointer asterisk) '{}' not defined in public repository API".format(typ_begin))
+                    print("  Function '{}' requires type (no pointer asterisk) '{}', which is outside public C/C++ interface of upb repository\n".format(fname, typ_begin))
+                    unsuccessful = True
+                    break
             except IndexError as err:
                 print("FAILURE: Unsuccessful test driver generation for function '{}':".format(f))
-                print("Regex Object: '{}'".format(str(m)))
-                print("Function Name: '{}'".format(fname))
-                print("Function Type: '{}'".format(ftype))
-                print('Index Error: {}'.format(err))
+                print("  Regex Object: '{}'".format(str(m)))
+                print("  Function Name: '{}'".format(fname))
+                print("  Failed on Type: '{}'".format(typ))
+                print('  Index Error: {}\n'.format(err))
+        if unsuccessful:
+            continue
 
-            outputstream = create_outputstream()
+        outputstream = create_outputstream()
 
-            output_stdc_headers(outputstream)
-            output_lib_headers(lib_headers, outputstream)
-            output_boilerplate_headers(outputstream)
-            Klee.output_headers(outputstream)
+        output_stdc_headers(outputstream)
+        output_lib_headers(lib_headers, outputstream)
+        output_boilerplate_headers(outputstream)
+        Klee.output_headers(outputstream)
 
-            params = re.split(r"\s*,\s*", f[1])
 
-            if not params:
-                sys.stderr.write("Could not parse parameter string: {}\n".format(f[1]))
+        ctx = TDContext(fname, ftype, params)
+        PRINT(ctx.to_string())
 
-            ctx = TDContext(fname, ftype, params)
-            PRINT(ctx.to_string())
+        variables = ctx.get_vars_from_params()
 
-            variables = ctx.get_vars_from_params()
+        if not variables:
+            continue
 
-            if not variables:
-                continue
+        Klee.output_init(outputstream)
 
-            Klee.output_init(outputstream)
+        for var in variables:
+            PRINT(var.to_string())
+            var.output_mk_var(outputstream)
+            output_newline(outputstream)
 
-            for var in variables:
-                PRINT(var.to_string())
-                var.output_mk_var(outputstream)
-                output_newline(outputstream)
+        res1, res2 = ctx.output_funccalls(outputstream)
+        Klee.output_assert(res1, res2, outputstream)
 
-            res1, res2 = ctx.output_funccalls(outputstream)
-            Klee.output_assert(res1, res2, outputstream)
+        Klee.output_footer(outputstream)
 
-            Klee.output_footer(outputstream)
-
-            ctx.dump_to_cfile(outputstream)
-            print ("Test Driver for function '{}' generated successfully".format(f))
+        ctx.dump_to_cfile(outputstream)
+        print ("Test Driver for function '{}' generated successfully\n".format(f))
 
