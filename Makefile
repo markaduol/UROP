@@ -32,7 +32,8 @@ libdir=$(exec_prefix)
 INSTALL=install
 INSTALL_DATA=$(INSTALL) -m 644
 
-all: submodule-init checkout-ver obj/libupb_all.o obj/libupb_all.a.bc obj/boilerplate.o obj/boilerplate.bc
+default: submodule-init checkout-ver obj/libupb_all.o obj/libupb_all.a.bc obj/boilerplate.o obj/boilerplate.bc
+all: submodule-init checkout-ver obj/libupb_all.o obj/libupb_all.a.bc obj/boilerplate.o obj/boilerplate.bc autotests
 
 submodule-init:
 	@$(GIT) submodule init
@@ -44,8 +45,8 @@ checkout-ver:
 	$(GIT) -C third_party/upb checkout $(SHA1)
 	$(GIT) -C third_party/upb-2 checkout master # Need to first checkout 'master' branch on clone
 	$(GIT) -C third_party/upb-2 checkout $(SHA2)
-	@echo 'upb/*/** -diff' >> third_party/upb/.gitattributes
-	@echo 'upb/*/** -diff' >> third_party/upb-2/.gitattributes
+	#@echo 'upb/*/** -diff' >> third_party/upb/.gitattributes
+	#@echo 'upb/*/** -diff' >> third_party/upb-2/.gitattributes
 
 ARCHIVE1=third_party/upb/lib/libupb.a
 ARCHIVE2=third_party/upb-2/lib/libupb.a
@@ -85,11 +86,16 @@ UPB2_LIBS=$(patsubst %, third_party/upb-2/lib/lib%.a, $(UPB_MODULES))
 UPB_LIBS_BC=$(patsubst %, obj/lib%1.a.bc, $(UPB_MODULES))
 UPB2_LIBS_RENAMED_BC=$(patsubst %, obj/lib%2opt.a.bc, $(UPB_MODULES))
 
-$(UPB_LIBS):
-	$(MAKE) CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q= -C third_party/upb
+AUTOTEST_SRCS:=$(wildcard autotd*.c)
+AUTOTEST_BCS:=$(patsubst autotd%.c, obj/autotd%.bc, $(AUTOTEST_SRCS))
 
+$(UPB_LIBS): CFLAGS="-g -ftest-coverage -fprofile-arcs" CXXFLAGS="-g -ftest-coverage -fprofile-arcs"
+$(UPB_LIBS):
+	$(MAKE) -C third_party/upb CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q=
+
+$(UPB2_LIBS): CFLAGS="-g -ftest-coverage -fprofile-arcs" CXXFLAGS="-g -ftest-coverage -fprofile-arcs"
 $(UPB2_LIBS):
-	$(MAKE) CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q= -C third_party/upb-2
+	$(MAKE) -C third_party/upb-2 CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q=
 
 $(FUNCRENAME_PASS):
 	cd llvm-passes && ./build_script.sh
@@ -135,34 +141,36 @@ obj/boilerplate.bc: $(PROJ_BCFILES)
 obj/boilerplate.o: obj/boilerplate.bc
 	$(LLC) -filetype=obj $< -o $@
 
-obj/%.out: tests/%.c obj/boilerplate.o obj/libupb_all.o
+autotests: $(AUTOTEST_BCS)
+
+$(AUTOTEST_BCS): obj/autotd%.bc: autotd%.c 
 	@mkdir -p $$(dirname $@)
 	@echo "KLEE Directory: $(klee_dir)"
-	$(GCC) -L $(KLEE_BUILD_LIBS) -fprofile-arcs -ftest-coverage $(INCLUDE_PATHS) obj/boilerplate.o obj/libupb.o $< -o $@ -lkleeRuntest
+	-$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
 
-obj/autotd%.bc: autotd%.c
+obj/autotd%.o: autotd%.c obj/boilerplate.o obj/libupb_all.o
 	@mkdir -p $$(dirname $@)
 	@echo "KLEE Directory: $(klee_dir)"
-	$(CLANG) -c -g -emit-llvm -o $@ $(INCLUDE_PATHS) $<
+	$(GCC) -L $(KLEE_BUILD_LIBS) -ftest-coverage -fprofile-arcs $(INCLUDE_PATHS) obj/boilerplate.o obj/libupb_all.o $< -o $@ -lkleeRuntest
 
-.PHONY: clean submodule-clean td-clean
+.PHONY: clean submodules-clean autotests-clean
 
-submodule-clean:
+submodules-clean:
+	rm -rf third_party/upb-2
 	@$(MAKE) -C third_party/upb clean
 	@$(GIT) -C third_party/upb checkout master
 	rm -f third_party/upb/.gitattributes
 
-td-clean:
+autotests-clean:
 	rm -f autotd*
 	rm -f obj/autotd*
 
 clean:
 	rm -rf obj
-	rm -rf third_party/upb-2
-	@$(MAKE) submodule-clean
+	@$(MAKE) submodules-clean
 	rm -rf llvm-passes/build
 	rm -f *.gcda
 	rm -f *.gcno
 	rm -f *.gcov
 	rm -f *.csv
-	@$(MAKE) td-clean
+	@$(MAKE) autotests-clean

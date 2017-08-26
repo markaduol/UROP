@@ -56,7 +56,6 @@ SCRIPT
 
 # Layer 5 - Install stp
 $layer5 = <<SCRIPT
-cd ../../
 git clone https://github.com/stp/stp.git
 cd stp
 git checkout tags/2.1.2

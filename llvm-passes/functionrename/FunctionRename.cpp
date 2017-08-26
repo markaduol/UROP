@@ -31,15 +31,19 @@ namespace {
       for (auto it = M.global_begin(); it != M.global_end(); ++it)
       {
         GlobalVariable& gv = *it;
-        if (!gv.isDeclaration())
-          gv.setLinkage(GlobalValue::PrivateLinkage);
+        StringRef Name = gv.getName();
+       if (!gv.isDeclaration())
+         // gv.setLinkage(GlobalValue::PrivateLinkage);
+         gv.setName(Name + "_renamed");
       }
       
       for (auto it = M.alias_begin(); it != M.alias_end(); ++it)
       {
         GlobalAlias& ga = *it;
+        StringRef Name = ga.getName();
         if (!ga.isDeclaration())
-          ga.setLinkage(GlobalValue::PrivateLinkage);
+          //ga.setLinkage(GlobalValue::PrivateLinkage);
+          ga.setName(Name + "_renamed");
       }
 
       // Rename all functions
