@@ -51,7 +51,7 @@ namespace {
         StringRef Name = F.getName();
         // Leave library functions alone because their presence or absence
         // could affect the behaviour of other passes.
-        if (F.isDeclaration())
+        if (F.isDeclaration()) 
           continue;
         F.setName(Name + "_renamed");
       }
