@@ -89,11 +89,11 @@ UPB2_LIBS_RENAMED_BC=$(patsubst %, obj/lib%2opt.a.bc, $(UPB_MODULES))
 AUTOTEST_SRCS:=$(wildcard autotd*.c)
 AUTOTEST_BCS:=$(patsubst autotd%.c, obj/autotd%.bc, $(AUTOTEST_SRCS))
 
-$(UPB_LIBS): CFLAGS="-g -ftest-coverage -fprofile-arcs" CXXFLAGS="-g -ftest-coverage -fprofile-arcs"
+$(UPB_LIBS): CFLAGS="-g" CXXFLAGS="-g"
 $(UPB_LIBS):
 	$(MAKE) -C third_party/upb CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q=
 
-$(UPB2_LIBS): CFLAGS="-g -ftest-coverage -fprofile-arcs" CXXFLAGS="-g -ftest-coverage -fprofile-arcs"
+$(UPB2_LIBS): CFLAGS="-g" CXXFLAGS="-g"
 $(UPB2_LIBS):
 	$(MAKE) -C third_party/upb-2 CFLAGS=$(CFLAGS) CXXFLAGS=$(CXXFLAGS) Q=
 

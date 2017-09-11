@@ -283,4 +283,69 @@ If your host machine is Windows,
 
 `find . -type f -print | xargs -i dos2unix '{}'`
 
-Note: There are still some dependency issues within the Vagrant environment. This will be resolved soon and this message updated.
+## Tutorial
+
+This tutorial works in the `vagrant` environment. 
+To start off, we use the `diff_function.py` tool to identify interesting revision pairs.
+
+```
+./diff_function.py -r third_party/upb --commits master --depth 20 --show-graph
+```
+
+In the generated graph, you should see that over all consecutive revision pairs, revision pair `(master~15, master~14)` has the greatest number of modified functions between the two revisions. So this revision pair seems like a good candidate for testing function implementation inconsistencies across the two revisions.
+
+We can print the list of modified functions to standard output as follows
+
+```
+./diff_function.py -r third_party/upb --commits master~15 master~14 --show-functions modified
+```
+
+We have our revision pair, so now we can compile two different versions of the third party repository, using the two revisions.
+
+If you get an error while running `make`, try omitting the `LLVM_VERSION=3.4` suffix. Also, the `Makefile` is equipped to find the path of your KLEE installation, but if it fails to do so, you may need to change the `KLEE_INCLUDE` and `KLEE_BUILD_LIBS` variables in the `Makefile`.
+
+```
+export LLVM_COMPILER=clang
+SHA1=master~15 SHA2=master~14 make LLVM_VERSION=3.4
+```
+Confirm third party repositories checked out correctly
+
+```
+git -C third_party/upb diff master~15 HEAD
+git -C third_party/upb diff master~14 HEAD
+```
+Generate test drivers for revision pair `(master~15, master~14)`. Note that in the following command, instead of `-r third_party/upb`, we can also use `-r third_party/upb-2` since the commits `master~15` and `master~14` exist in the history of both repositories and point to the same objects in both repositories.
+
+```
+./autogen.py -r third_party/upb --commits master~15 master~14
+```
+Compile automatically generated tests to LLVM bitcode
+
+```
+make autotests
+```
+Now we can test the modified functions with KLEE using the generated test drivers. To run test `obj/autotd1.bc`
+
+```
+cd obj
+klee -libc=uclibc -link-llvm-lib=boilerplate.bc -link-llvm-lib=libupb_all.a.bc autotd1.bc
+```
+View statistics with `klee-stats`
+
+```
+klee-stats .
+```
+
+## Suggestions for improvement
+Compile third party libraries with `-ftest-coverage -fprofile-arcs` flags to generate GCOV files and use GCOV to generate coverage information when running the test drivers with KLEE. It is possible to compile the third party libraries with these flags, but this leads to a number of undefined references in the bitcode archive `libupb_all.a.bc`, such as 
+
+* `llvm_gcda_emit_arcs`
+* `llvm_gcda_emit_function` 
+* `llvm_gcda_end_file`
+* `llvm_gcda_start_file`
+* `llvm_gcda_summary_info`
+* `llvm_gcov_init`
+
+that cause KLEE to crash.
+
+When compiling the third party libraries with the `-ftest-coverage -fprofile-arcs` flags, multiple `.gcno` files are generated in the directories `third_party/upb/obj/upb` and `third_party/upb-2/obj/upb`, although I am unsure on how to use these files to instrument KLEE and obtain coverage information while running the test drivers.
